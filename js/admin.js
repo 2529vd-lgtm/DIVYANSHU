@@ -50,7 +50,7 @@ function savedToken() {
 async function login(token, remember) {
   GH.token = token;
   const info = await GH.repoInfo();
-  if (!info) throw new Error("Repository not found. Did you select the DIVYANSHU repo when creating the token?");
+  if (!info) throw new Error("This token can't see the DIVYANSHU repo. Log out and create a token with access to both DIVYANSHU and EXAM-CORNER (see the steps below).");
   if (!info.permissions || !info.permissions.push) throw new Error("This token can't write to the repo (it needs Contents: Read and write).");
   try {
     (remember ? localStorage : sessionStorage).setItem("ghToken", token);

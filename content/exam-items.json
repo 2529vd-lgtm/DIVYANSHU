@@ -1,15 +1,6 @@
 {
   "items": [
     {
-      "id": "fundamental-rights-short",
-      "exam": "bpsc-prelims",
-      "subject": "polity",
-      "type": "short",
-      "title": "Fundamental Rights: Quick Revision",
-      "summary": "One-page revision points.",
-      "date": "2026-10-06"
-    },
-    {
       "id": "fundamental-rights-mindmap",
       "exam": "upsc-cse-prelims-2027",
       "subject": "polity",

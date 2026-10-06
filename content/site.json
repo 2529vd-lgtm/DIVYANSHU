@@ -4,5 +4,8 @@
   "tagline": "Blogs · Stories · Editorials · Reports",
   "photo": "",
   "about": "",
-  "socials": {}
+  "socials": {},
+  "analytics": {
+    "goatcounter": "https://divyanshu.goatcounter.com/count"
+  }
 }

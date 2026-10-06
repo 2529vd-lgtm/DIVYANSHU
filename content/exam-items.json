@@ -1,15 +1,6 @@
 {
   "items": [
     {
-      "id": "fundamental-rights-long",
-      "exam": "upsc-cse-prelims-2027",
-      "subject": "polity",
-      "type": "long",
-      "title": "Fundamental Rights (Articles 12–35)",
-      "summary": "Six categories of rights, key articles, amendments and landmark cases.",
-      "date": "2026-10-06"
-    },
-    {
       "id": "fundamental-rights-short",
       "exam": "bpsc-prelims",
       "subject": "polity",

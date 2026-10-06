@@ -8,9 +8,6 @@ const SITE_REPO = {
 // Article sections shown on the home page and the Articles page.
 const CATEGORIES = ["Blog", "Story", "Editorial", "Report"];
 
-// Exam Corner (syllabus, notes, PYQ, mock tests) is a separate website.
-const EXAM_CORNER_URL = "https://2529vd-lgtm.github.io/EXAM-CORNER/";
-
 // Social platforms that can be linked from Admin → Settings.
 const SOCIALS = [
   { id: "instagram", label: "Instagram", color: "#E4405F" },

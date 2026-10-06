@@ -5,6 +5,7 @@ const PATHS = {
   site: "content/site.json",
   articles: "content/articles.json",
   article: (id) => `content/articles/${id}.md`,
+  chapter: (id, n) => `content/articles/${id}/chapter-${n}.md`,
 };
 const MAX_UPLOAD_MB = 25;
 const DB = { site: {}, articles: [] };
@@ -21,19 +22,19 @@ function status(msg, kind = "info") {
 }
 
 const PUBLISHED = (href) =>
-  `✅ Save ho gaya! Website par 1–2 minute mein dikhega${href ? `: <a href="${href}" target="_blank">dekhein</a>` : "."}`;
+  `✅ Saved! It will show on the website in 1–2 minutes${href ? `: <a href="${href}" target="_blank">view</a>` : "."}`;
 
 // Runs a save action with a busy button and a friendly error message.
 async function busy(btn, label, fn) {
   const old = btn.textContent;
   btn.disabled = true;
   btn.textContent = label;
-  status("⏳ Save ho raha hai… page band mat karein.");
+  status("⏳ Saving… please don't close this page.");
   try {
     await fn();
   } catch (e) {
     console.error(e);
-    const hint = e.status === 401 || e.status === 403 ? " Token galat hai ya uski permission kam hai. Logout karke naya token daalein." : "";
+    const hint = e.status === 401 || e.status === 403 ? " The token is wrong or doesn't have enough permission. Log out and enter a new token." : "";
     status(`❌ Error: ${esc(e.message)}.${hint}`, "err");
   } finally {
     btn.disabled = false;
@@ -49,8 +50,8 @@ function savedToken() {
 async function login(token, remember) {
   GH.token = token;
   const info = await GH.repoInfo();
-  if (!info) throw new Error("Repository nahi mili. Token banate waqt DIVYANSHU repo chuna tha?");
-  if (!info.permissions || !info.permissions.push) throw new Error("Is token ke paas likhne ki permission nahi hai (Contents: Read and write chahiye).");
+  if (!info) throw new Error("Repository not found. Did you select the DIVYANSHU repo when creating the token?");
+  if (!info.permissions || !info.permissions.push) throw new Error("This token can't write to the repo (it needs Contents: Read and write).");
   try {
     (remember ? localStorage : sessionStorage).setItem("ghToken", token);
   } catch (e) {}
@@ -85,8 +86,8 @@ function showTab(tab) {
 
 // ---------- Rich text editor (Markdown with toolbar + preview + uploads) ----------
 const TOOLS = [
-  ["H2", "Bada heading", (s) => `\n## ${s || "Heading"}\n`],
-  ["H3", "Chhota heading", (s) => `\n### ${s || "Sub-heading"}\n`],
+  ["H2", "Big heading", (s) => `\n## ${s || "Heading"}\n`],
+  ["H3", "Small heading", (s) => `\n### ${s || "Sub-heading"}\n`],
   ["B", "Bold", (s) => `**${s || "bold text"}**`],
   ["I", "Italic", (s) => `*${s || "italic text"}*`],
   ["• List", "Bullet list", (s) => "\n" + (s || "point").split("\n").map((l) => `- ${l}`).join("\n") + "\n"],
@@ -101,11 +102,11 @@ function editorHTML(id, value, rows = 16) {
   return `<div class="editor" data-editor="${id}">
     <div class="editor-tools">
       ${TOOLS.map((t, i) => `<button type="button" class="icon-btn" data-tool="${i}" title="${esc(t[1])}">${esc(t[0])}</button>`).join("")}
-      <button type="button" class="icon-btn" data-upload="image" title="Photo upload karein">🖼️ Photo</button>
-      <button type="button" class="icon-btn" data-upload="file" title="PDF ya koi file upload karein">📎 PDF/File</button>
-      <button type="button" class="icon-btn" data-preview title="Kaisa dikhega">👁️ Preview</button>
+      <button type="button" class="icon-btn" data-upload="image" title="Upload a photo">🖼️ Photo</button>
+      <button type="button" class="icon-btn" data-upload="file" title="Upload a PDF or any file">📎 PDF/File</button>
+      <button type="button" class="icon-btn" data-preview title="See how it will look">👁️ Preview</button>
     </div>
-    <textarea id="${id}" rows="${rows}" placeholder="Yahan likhna shuru karein… (toolbar se heading, bold, list, photo add kar sakte hain)">${esc(value || "")}</textarea>
+    <textarea id="${id}" rows="${rows}" placeholder="Start writing here… (use the toolbar to add headings, bold, lists and photos)">${esc(value || "")}</textarea>
     <div class="preview prose hidden" id="${id}-preview"></div>
   </div>`;
 }
@@ -139,14 +140,14 @@ function setupEditors(root) {
           const path = await uploadFile(file);
           const isImg = file.type.startsWith("image/");
           insertAtCursor(ta, isImg ? `\n![${file.name}](${path})\n` : `\n[📄 ${file.name} (download/open)](${path})\n`);
-          status("✅ File upload ho gayi. Ab content save karna na bhoolein.", "ok");
+          status("✅ File uploaded. Don't forget to save.", "ok");
         });
       } else if (b.dataset.preview !== undefined) {
         const showing = !pv.classList.contains("hidden");
         pv.classList.toggle("hidden", showing);
         ta.classList.toggle("hidden", !showing);
         b.textContent = showing ? "👁️ Preview" : "✏️ Edit";
-        if (!showing) pv.innerHTML = previewHTML(ta.value) || "<p class='muted'>Kuch nahi likha.</p>";
+        if (!showing) pv.innerHTML = previewHTML(ta.value) || "<p class='muted'>Nothing written yet.</p>";
       }
     });
   });
@@ -163,11 +164,11 @@ function pickFile(accept) {
 }
 
 async function uploadFile(file) {
-  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error(`File ${MAX_UPLOAD_MB} MB se badi hai`);
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error(`File is larger than ${MAX_UPLOAD_MB} MB`);
   const base64 = await new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result).split(",")[1]);
-    r.onerror = () => reject(new Error("File padh nahi paye"));
+    r.onerror = () => reject(new Error("Could not read the file"));
     r.readAsDataURL(file);
   });
   const d = today();
@@ -184,7 +185,7 @@ function imageFieldHTML(id, label, value) {
   return `<div class="field">
     <label for="${id}">${label}</label>
     <div style="display:flex;gap:8px">
-      <input id="${id}" value="${esc(value || "")}" placeholder="Upload karein ya image link paste karein" />
+      <input id="${id}" value="${esc(value || "")}" placeholder="Upload, or paste an image link" />
       <button type="button" class="btn small ghost" data-image-upload="${id}">Upload</button>
     </div>
   </div>`;
@@ -197,7 +198,7 @@ function setupImageFields(root) {
       if (!file) return;
       await busy(b, "…", async () => {
         $(b.dataset.imageUpload).value = await uploadFile(file);
-        status("✅ Photo upload ho gayi. Ab Save/Publish dabayein.", "ok");
+        status("✅ Photo uploaded. Now click Save/Publish.", "ok");
       });
     })
   );
@@ -211,32 +212,37 @@ function articleList() {
   $("view").innerHTML = `<div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
       <h2 style="margin:0">Articles (${list.length})</h2>
-      <button class="btn" id="new-article">+ Naya article</button>
+      <button class="btn" id="new-article">+ New article</button>
     </div>
-    <p class="help">Blog, Story, Editorial ya Report: sab yahan se upload karein.</p>
+    <p class="help">Upload a Blog, Story, Editorial or Report here. For a novel, create a Story, tick "This is a novel", then add chapters one by one.</p>
     <ul class="admin-list">
-      ${list.map((a) => `<li><div><b>${esc(a.title)}</b><div class="meta">${esc(a.category)} · ${fmtDate(a.date)}</div></div>
+      ${list.map((a) => `<li><div><b>${esc(a.title)}</b><div class="meta">${esc(a.category)}${a.novel ? ` · 📖 Novel, ${(a.chapters || []).length} chapters` : ""} · ${fmtDate(a.date)}</div></div>
         <span class="actions">
+          ${a.novel ? `<button class="btn small" data-chapters="${esc(a.id)}">Chapters</button>` : ""}
           <a class="btn small ghost" href="article.html?id=${encodeURIComponent(a.id)}" target="_blank">View</a>
           <button class="btn small ghost" data-edit="${esc(a.id)}">Edit</button>
           <button class="btn small outline" data-del="${esc(a.id)}">Delete</button>
-        </span></li>`).join("") || `<li class="muted">Abhi koi article nahi hai.</li>`}
+        </span></li>`).join("") || `<li class="muted">No articles yet.</li>`}
     </ul>
   </div>`;
+  const find = (id) => DB.articles.find((a) => a.id === id);
   $("new-article").onclick = () => articleForm(null);
-  $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => articleForm(DB.articles.find((a) => a.id === b.dataset.edit))));
+  $("view").querySelectorAll("[data-chapters]").forEach((b) => (b.onclick = () => chapterList(find(b.dataset.chapters))));
+  $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => articleForm(find(b.dataset.edit))));
   $("view").querySelectorAll("[data-del]").forEach((b) =>
     (b.onclick = () => {
-      const a = DB.articles.find((x) => x.id === b.dataset.del);
-      if (!confirm(`"${a.title}" delete karein? Ye wapas nahi aayega.`)) return;
+      const a = find(b.dataset.del);
+      const extra = a.novel ? " All of its chapters will be deleted too." : "";
+      if (!confirm(`Delete "${a.title}"?${extra} This cannot be undone.`)) return;
       busy(b, "…", async () => {
+        for (const ch of a.chapters || []) await GH.remove(PATHS.chapter(a.id, ch.n), `Delete chapter ${ch.n}: ${a.title}`);
         await GH.remove(PATHS.article(a.id), `Delete article: ${a.title}`);
         const data = await GH.updateJSON(PATHS.articles, { articles: [] }, (d) => {
           d.articles = d.articles.filter((x) => x.id !== a.id);
         }, `Remove article from index: ${a.title}`);
         DB.articles = data.articles;
         articleList();
-        status("🗑️ Article delete ho gaya.", "ok");
+        status("🗑️ Article deleted.", "ok");
       });
     })
   );
@@ -245,13 +251,13 @@ function articleList() {
 async function articleForm(a) {
   let body = "";
   if (a) {
-    status("⏳ Article load ho raha hai…");
+    status("⏳ Loading article…");
     const f = await GH.read(PATHS.article(a.id));
     body = f ? f.text : "";
     status("");
   }
   $("view").innerHTML = `<div class="panel">
-    <h2>${a ? "Article edit karein" : "Naya article"}</h2>
+    <h2>${a ? "Edit article" : "New article"}</h2>
     <div class="field"><label for="a-title">Title (heading) *</label><input id="a-title" value="${esc(a?.title)}" /></div>
     <div class="row">
       <div class="field"><label for="a-cat">Type</label>
@@ -259,16 +265,27 @@ async function articleForm(a) {
       <div class="field"><label for="a-date">Date</label><input type="date" id="a-date" value="${esc(a?.date || today())}" /></div>
       <div class="field"><label for="a-author">Author</label><input id="a-author" value="${esc(a?.author ?? DB.site.author ?? "")}" /></div>
     </div>
-    <div class="field"><label for="a-summary">Short summary (1–2 lines, home page par dikhega)</label><textarea id="a-summary" rows="2" style="min-height:0">${esc(a?.summary)}</textarea></div>
+    <label id="a-novel-wrap" style="font-weight:600;display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <input type="checkbox" id="a-novel" style="width:auto" ${a?.novel ? "checked" : ""} /> 📖 This is a novel (I will upload chapters one by one)
+    </label>
+    <div class="field"><label for="a-summary">Short summary (1–2 lines, shown on the home page)</label><textarea id="a-summary" rows="2" style="min-height:0">${esc(a?.summary)}</textarea></div>
     ${imageFieldHTML("a-cover", "Cover photo (optional)", a?.cover)}
-    <div class="field"><label>Article *</label>${editorHTML("a-body", body, 20)}</div>
+    <div class="field"><label id="a-body-label">Article *</label>${editorHTML("a-body", body, 20)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="a-save">${a ? "Update karein" : "🚀 Publish karein"}</button>
+      <button class="btn" id="a-save">${a ? "Update" : "🚀 Publish"}</button>
       <button class="btn ghost" id="a-cancel">Cancel</button>
     </div>
   </div>`;
   setupEditors($("view"));
   setupImageFields($("view"));
+  const isNovel = () => $("a-cat").value === "Story" && $("a-novel").checked;
+  const syncNovel = () => {
+    $("a-novel-wrap").classList.toggle("hidden", $("a-cat").value !== "Story");
+    $("a-body-label").textContent = isNovel() ? "Introduction / synopsis (optional, shown before the chapters)" : "Article *";
+  };
+  $("a-cat").onchange = syncNovel;
+  $("a-novel").onchange = syncNovel;
+  syncNovel();
   $("a-cancel").onclick = articleList;
   $("a-save").onclick = () => {
     const meta = {
@@ -280,16 +297,114 @@ async function articleForm(a) {
       summary: $("a-summary").value.trim(),
       cover: $("a-cover").value.trim(),
     };
+    if (isNovel()) {
+      meta.novel = true;
+      meta.chapters = a?.chapters || [];
+    } else if (a?.chapters?.length) {
+      return status("⚠️ This novel has chapters. Delete its chapters first before turning it into a normal article.", "err");
+    }
     const text = $("a-body").value;
-    if (!meta.title || !text.trim()) return status("⚠️ Title aur article dono likhna zaroori hai.", "err");
+    if (!meta.title) return status("⚠️ Please write a title.", "err");
+    if (!meta.novel && !text.trim()) return status("⚠️ Please write both the title and the article.", "err");
     busy($("a-save"), "Saving…", async () => {
       await GH.put(PATHS.article(meta.id), text, `${a ? "Update" : "Publish"} ${meta.category.toLowerCase()}: ${meta.title}`);
       const data = await GH.updateJSON(PATHS.articles, { articles: [] }, (d) => {
+        const old = d.articles.find((x) => x.id === meta.id);
+        if (meta.novel && old?.chapters) meta.chapters = old.chapters;
         d.articles = [meta, ...d.articles.filter((x) => x.id !== meta.id)].sort(byDate);
       }, `Update article index: ${meta.title}`);
       DB.articles = data.articles;
-      articleList();
-      status(PUBLISHED(`article.html?id=${encodeURIComponent(meta.id)}`), "ok");
+      if (meta.novel && !a) {
+        chapterList(meta);
+        status("✅ Novel created. Now add Chapter 1.", "ok");
+      } else {
+        articleList();
+        status(PUBLISHED(`article.html?id=${encodeURIComponent(meta.id)}`), "ok");
+      }
+    });
+  };
+}
+
+// ---------- Novel chapters ----------
+function chapterList(novel) {
+  const chapters = [...(novel.chapters || [])].sort((x, y) => x.n - y.n);
+  const next = chapters.length ? chapters[chapters.length - 1].n + 1 : 1;
+  $("view").innerHTML = `<div class="panel">
+    <p><a href="#" id="ch-back">← All articles</a></p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+      <h2 style="margin:0">📖 ${esc(novel.title)}: Chapters (${chapters.length})</h2>
+      <button class="btn" id="ch-new">+ Add Chapter ${next}</button>
+    </div>
+    <p class="help">Upload chapters one by one. Readers can read chapter by chapter, or the full novel on one page.</p>
+    <ul class="admin-list">
+      ${chapters.map((c) => `<li><div><b>Chapter ${c.n}${c.title ? `: ${esc(c.title)}` : ""}</b><div class="meta">${fmtDate(c.date)}</div></div>
+        <span class="actions">
+          <a class="btn small ghost" href="article.html?id=${encodeURIComponent(novel.id)}&ch=${c.n}" target="_blank">View</a>
+          <button class="btn small ghost" data-edit="${c.n}">Edit</button>
+          <button class="btn small outline" data-del="${c.n}">Delete</button>
+        </span></li>`).join("") || `<li class="muted">No chapters yet. Click "Add Chapter 1".</li>`}
+    </ul>
+  </div>`;
+  $("ch-back").onclick = (e) => { e.preventDefault(); status(""); articleList(); };
+  $("ch-new").onclick = () => chapterForm(novel, null, next);
+  $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => chapterForm(novel, chapters.find((c) => c.n === Number(b.dataset.edit)))));
+  $("view").querySelectorAll("[data-del]").forEach((b) =>
+    (b.onclick = () => {
+      const n = Number(b.dataset.del);
+      if (!confirm(`Delete Chapter ${n}? This cannot be undone.`)) return;
+      busy(b, "…", async () => {
+        await GH.remove(PATHS.chapter(novel.id, n), `Delete chapter ${n}: ${novel.title}`);
+        const updated = await saveChapterIndex(novel.id, (list) => list.filter((c) => c.n !== n), `Remove chapter ${n}: ${novel.title}`);
+        chapterList(updated);
+        status("🗑️ Chapter deleted.", "ok");
+      });
+    })
+  );
+}
+
+// Changes one novel's chapter list in articles.json and returns the updated novel.
+async function saveChapterIndex(novelId, change, message) {
+  const data = await GH.updateJSON(PATHS.articles, { articles: [] }, (d) => {
+    const novel = d.articles.find((x) => x.id === novelId);
+    if (!novel) throw new Error("This novel no longer exists");
+    novel.chapters = change(novel.chapters || []).sort((x, y) => x.n - y.n);
+  }, message);
+  DB.articles = data.articles;
+  return DB.articles.find((x) => x.id === novelId);
+}
+
+async function chapterForm(novel, ch, nextN) {
+  const n = ch ? ch.n : nextN;
+  let body = "";
+  if (ch) {
+    status("⏳ Loading chapter…");
+    const f = await GH.read(PATHS.chapter(novel.id, n));
+    body = f ? f.text : "";
+    status("");
+  }
+  $("view").innerHTML = `<div class="panel">
+    <h2>📖 ${esc(novel.title)}: ${ch ? "Edit" : "New"} Chapter ${n}</h2>
+    <div class="row">
+      <div class="field"><label for="c-title">Chapter title (optional)</label><input id="c-title" value="${esc(ch?.title)}" placeholder="e.g. The Beginning" /></div>
+      <div class="field"><label for="c-date">Date</label><input type="date" id="c-date" value="${esc(ch?.date || today())}" /></div>
+    </div>
+    <div class="field"><label>Chapter ${n} *</label>${editorHTML("c-body", body, 22)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="c-save">${ch ? "Update chapter" : `🚀 Publish Chapter ${n}`}</button>
+      <button class="btn ghost" id="c-cancel">Cancel</button>
+    </div>
+  </div>`;
+  setupEditors($("view"));
+  $("c-cancel").onclick = () => chapterList(novel);
+  $("c-save").onclick = () => {
+    const text = $("c-body").value;
+    if (!text.trim()) return status("⚠️ Please write the chapter.", "err");
+    const entry = { n, title: $("c-title").value.trim(), date: $("c-date").value || today() };
+    busy($("c-save"), "Saving…", async () => {
+      await GH.put(PATHS.chapter(novel.id, n), text, `${ch ? "Update" : "Publish"} chapter ${n}: ${novel.title}`);
+      const updated = await saveChapterIndex(novel.id, (list) => [...list.filter((c) => c.n !== n), entry], `Update chapters: ${novel.title}`);
+      chapterList(updated);
+      status(PUBLISHED(`article.html?id=${encodeURIComponent(novel.id)}&ch=${n}`), "ok");
     });
   };
 }
@@ -298,23 +413,23 @@ async function articleForm(a) {
 // Settings: site name, about, social media links
 // =====================================================================
 const SOCIAL_HINTS = {
-  instagram: "https://instagram.com/aapka_username",
-  youtube: "https://youtube.com/@aapka_channel",
-  facebook: "https://facebook.com/aapka_page",
-  x: "https://x.com/aapka_username",
-  telegram: "https://t.me/aapka_channel",
-  whatsapp: "Number (91XXXXXXXXXX) ya channel link",
-  linkedin: "https://linkedin.com/in/aapka_naam",
-  threads: "https://threads.net/@aapka_username",
-  github: "https://github.com/aapka_username",
-  email: "aapka@email.com",
+  instagram: "https://instagram.com/your_username",
+  youtube: "https://youtube.com/@your_channel",
+  facebook: "https://facebook.com/your_page",
+  x: "https://x.com/your_username",
+  telegram: "https://t.me/your_channel",
+  whatsapp: "Number (91XXXXXXXXXX) or channel link",
+  linkedin: "https://linkedin.com/in/your_name",
+  threads: "https://threads.net/@your_username",
+  github: "https://github.com/your_username",
+  email: "you@email.com",
 };
 
 function settingsForm() {
   const s = DB.site;
   $("view").innerHTML = `<div class="panel">
     <h2>🔗 Social media links</h2>
-    <p class="help" style="margin-bottom:12px">Jo link daalenge, uska logo website par dikhega (home page, har article ke neeche aur footer mein). Khali chhodne par wo logo nahi dikhega.</p>
+    <p class="help" style="margin-bottom:12px">Each link you add shows its logo on the website (home page, below every article and in the footer). Leave a box empty to hide that logo.</p>
     ${SOCIALS.map((p) => `<div class="field" style="display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center">
       <span class="social" style="--brand:${p.color}">${ICONS[p.id]}</span>
       <div><label for="s-${p.id}" style="margin:0">${p.label}</label>
@@ -324,14 +439,14 @@ function settingsForm() {
   <div class="panel">
     <h2>Website settings</h2>
     <div class="row">
-      <div class="field"><label for="s-name">Website ka naam</label><input id="s-name" value="${esc(s.name)}" /></div>
-      <div class="field"><label for="s-author">Aapka naam (author)</label><input id="s-author" value="${esc(s.author)}" /></div>
+      <div class="field"><label for="s-name">Website name</label><input id="s-name" value="${esc(s.name)}" /></div>
+      <div class="field"><label for="s-author">Your name (author)</label><input id="s-author" value="${esc(s.author)}" /></div>
     </div>
-    <div class="field"><label for="s-tagline">Tagline (naam ke neeche)</label><input id="s-tagline" value="${esc(s.tagline)}" /></div>
-    ${imageFieldHTML("s-photo", "Aapki photo (About section)", s.photo)}
+    <div class="field"><label for="s-tagline">Tagline (below the name)</label><input id="s-tagline" value="${esc(s.tagline)}" /></div>
+    ${imageFieldHTML("s-photo", "Your photo (About section)", s.photo)}
     <div class="field"><label for="s-about">About me</label><textarea id="s-about" rows="5">${esc(s.about)}</textarea></div>
   </div>
-  <button class="btn" id="s-save">💾 Save karein</button>`;
+  <button class="btn" id="s-save">💾 Save</button>`;
   setupImageFields($("view"));
   $("s-save").onclick = () =>
     busy($("s-save"), "Saving…", async () => {
@@ -366,15 +481,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("login-btn").onclick = () =>
     busy($("login-btn"), "Checking…", async () => {
       const token = $("token").value.trim();
-      if (!token) throw new Error("Token khali hai");
+      if (!token) throw new Error("Token is empty");
       await login(token, $("remember").checked);
     });
   const saved = savedToken();
   if (saved) {
-    status("⏳ Login ho raha hai…");
+    status("⏳ Logging in…");
     let remembered = false;
     try { remembered = !!localStorage.getItem("ghToken"); } catch (e) {}
     try { await login(saved, remembered); }
-    catch (e) { status(`Purana token kaam nahi kar raha (${esc(e.message)}). Naya token daalein.`, "err"); }
+    catch (e) { status(`The saved token isn't working (${esc(e.message)}). Please enter a new token.`, "err"); }
   }
 });

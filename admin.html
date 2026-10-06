@@ -7,7 +7,7 @@
   <title>Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
   <div id="site-header"></div>
@@ -19,25 +19,25 @@
     <!-- Login -->
     <div class="panel" id="login">
       <h2>Login</h2>
-      <p class="muted" style="margin-bottom:12px">Upload karne ke liye apna GitHub token daalein. Ye token sirf aapke browser mein rehta hai.</p>
+      <p class="muted" style="margin-bottom:12px">Enter your GitHub token to upload. The token stays only in your browser.</p>
       <div class="field">
         <label for="token">GitHub token</label>
         <input type="password" id="token" placeholder="github_pat_..." autocomplete="off" />
       </div>
       <label style="font-weight:500;display:flex;gap:8px;align-items:center">
-        <input type="checkbox" id="remember" style="width:auto" checked /> Is device par yaad rakho (shared/cyber cafe computer par tick hata dein)
+        <input type="checkbox" id="remember" style="width:auto" checked /> Remember on this device (untick on a shared or cyber café computer)
       </label>
       <button class="btn" id="login-btn" style="margin-top:12px">Login</button>
       <details class="help" style="margin-top:16px">
-        <summary><b>Token kaise banayein? (sirf ek baar)</b></summary>
+        <summary><b>How to create a token (one time only)</b></summary>
         <ol>
-          <li>GitHub par login karke ye page kholo: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
-          <li><b>Token name</b>: <code>website-admin</code> likho. <b>Expiration</b>: "No expiration" ya 1 saal chuno.</li>
-          <li><b>Repository access</b> → <b>Only select repositories</b> → <code>DIVYANSHU</code> chuno.</li>
-          <li><b>Permissions → Repository permissions → Contents</b> → <b>Read and write</b> chuno.</li>
-          <li>Neeche <b>Generate token</b> dabao, token copy karo aur upar paste karo.</li>
+          <li>Log in to GitHub and open this page: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+          <li><b>Token name</b>: type <code>website-admin</code>. <b>Expiration</b>: choose "No expiration" or 1 year.</li>
+          <li><b>Repository access</b> → <b>Only select repositories</b> → choose <code>DIVYANSHU</code>.</li>
+          <li><b>Permissions → Repository permissions → Contents</b> → choose <b>Read and write</b>.</li>
+          <li>Click <b>Generate token</b> at the bottom, copy the token and paste it above.</li>
         </ol>
-        <p>⚠️ Token kisi ke saath share mat karna. Token se koi bhi aapki website badal sakta hai.</p>
+        <p>⚠️ Never share your token. Anyone with it can change your website.</p>
       </details>
     </div>
 
@@ -54,12 +54,12 @@
 
   <div id="site-footer"></div>
 
-  <script src="js/vendor/marked.umd.js"></script>
-  <script src="js/vendor/purify.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/common.js"></script>
-  <script src="js/github.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="js/vendor/marked.umd.js?v=3"></script>
+  <script src="js/vendor/purify.min.js?v=3"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/icons.js?v=3"></script>
+  <script src="js/common.js?v=3"></script>
+  <script src="js/github.js?v=3"></script>
+  <script src="js/admin.js?v=3"></script>
 </body>
 </html>

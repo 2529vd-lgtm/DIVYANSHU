@@ -25,7 +25,7 @@ function setupShare() {
       await navigator.clipboard.writeText(location.href);
       btn.textContent = "✅ Copied";
     } catch (e) {
-      prompt("Link copy karein:", location.href);
+      prompt("Copy this link:", location.href);
     }
   });
 }

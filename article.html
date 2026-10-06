@@ -6,7 +6,7 @@
   <title>Article</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
   <div id="site-header"></div>
@@ -17,46 +17,87 @@
 
   <div id="site-footer"></div>
 
-  <script src="js/vendor/marked.umd.js"></script>
-  <script src="js/vendor/purify.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/common.js"></script>
-  <script src="js/share.js"></script>
+  <script src="js/vendor/marked.umd.js?v=3"></script>
+  <script src="js/vendor/purify.min.js?v=3"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/icons.js?v=3"></script>
+  <script src="js/common.js?v=3"></script>
+  <script src="js/share.js?v=3"></script>
   <script>
+    const chapterName = (c) => `Chapter ${c.n}${c.title ? `: ${esc(c.title)}` : ""}`;
+
     document.addEventListener("DOMContentLoaded", async () => {
       const site = await renderChrome("articles");
       const reader = document.getElementById("reader");
       const id = param("id");
       const { articles } = await loadJSON("content/articles.json", { articles: [] });
       const a = articles.find((x) => x.id === id);
-      if (!a) return showError(reader, "Ye article nahi mila.");
+      if (!a) return showError(reader, "Article not found.");
+
+      const chapters = [...(a.chapters || [])].sort((x, y) => x.n - y.n);
+      const chapterFile = (c) => `content/articles/${a.id}/chapter-${c.n}.md`;
+      const home = `article.html?id=${encodeURIComponent(a.id)}`;
+      const chParam = param("ch");
+      const full = a.novel && param("view") === "full";
+      const current = a.novel && chParam ? chapters.find((c) => String(c.n) === chParam) : null;
+      if (a.novel && chParam && !current) return showError(reader, "Chapter not found.");
 
       let body = "";
-      try { body = await loadText(`content/articles/${a.id}.md`); }
-      catch (e) { return showError(reader, "Article load nahi ho paya. Thodi der baad try karein."); }
+      try {
+        if (current) body = await loadText(chapterFile(current));
+        else if (full) {
+          const texts = await Promise.all(chapters.map((c) => loadText(chapterFile(c))));
+          body = chapters.map((c, i) => `<h2 class="chapter-head" id="chapter-${c.n}">${chapterName(c)}</h2>\n\n${texts[i]}`).join("\n\n---\n\n");
+        } else body = await loadText(`content/articles/${a.id}.md`);
+      } catch (e) { return showError(reader, "Could not load this article. Please try again in a little while."); }
 
-      document.title = `${a.title} | ${site.name}`;
+      document.title = `${current ? `Chapter ${current.n} · ` : ""}${a.title} | ${site.name}`;
       const more = articles
         .filter((x) => x.id !== a.id && x.category === a.category)
         .sort((x, y) => String(y.date).localeCompare(String(x.date)))
         .slice(0, 3);
 
+      // Novel: chapter list, plus the two ways of reading.
+      let novelTop = "", novelBottom = "";
+      if (a.novel && !current && !full) {
+        novelBottom = chapters.length
+          ? `<div class="read-options no-print">
+              <a class="btn" href="${home}&ch=${chapters[0].n}">📖 Read chapter by chapter</a>
+              <a class="btn ghost" href="${home}&view=full">📚 Read the full novel</a>
+            </div>
+            <div class="section-head"><h2>Chapters (${chapters.length})</h2></div>
+            <ol class="toc">${chapters.map((c) => `<li><a href="${home}&ch=${c.n}">${chapterName(c)}</a> <span class="meta">${fmtDate(c.date)}</span></li>`).join("")}</ol>`
+          : `<p class="empty">Chapters are coming soon.</p>`;
+      }
+      if (current) {
+        const i = chapters.indexOf(current);
+        const prev = chapters[i - 1], next = chapters[i + 1];
+        novelTop = `<h2 class="chapter-title">${chapterName(current)}</h2>`;
+        novelBottom = `<nav class="chapter-nav no-print">
+            ${prev ? `<a class="btn ghost" href="${home}&ch=${prev.n}">← Chapter ${prev.n}</a>` : "<span></span>"}
+            <a class="btn ghost" href="${home}">☰ All chapters</a>
+            ${next ? `<a class="btn" href="${home}&ch=${next.n}">Chapter ${next.n} →</a>` : `<span class="muted">The end, for now ✨</span>`}
+          </nav>`;
+      }
+      if (full) novelBottom = `<nav class="chapter-nav no-print"><a class="btn ghost" href="${home}">☰ All chapters</a></nav>`;
+
       reader.innerHTML = `
-        <a class="kicker" href="articles.html?cat=${encodeURIComponent(a.category)}">${esc(a.category)}</a>
-        <h1>${esc(a.title)}</h1>
-        ${a.summary ? `<p class="standfirst">${esc(a.summary)}</p>` : ""}
+        <a class="kicker" href="articles.html?cat=${encodeURIComponent(a.category)}">${esc(a.category)}${a.novel ? " · Novel" : ""}</a>
+        <h1>${a.novel && (current || full) ? `<a href="${home}">${esc(a.title)}</a>` : esc(a.title)}</h1>
+        ${a.summary && !current ? `<p class="standfirst">${esc(a.summary)}</p>` : ""}
         <div class="byline">
-          <span class="meta"><b>${esc(a.author || site.author || "")}</b> · ${fmtDate(a.date, { day: "numeric", month: "long", year: "numeric" })} · ${readingTime(body)}</span>
+          <span class="meta"><b>${esc(a.author || site.author || "")}</b> · ${fmtDate((current || a).date, { day: "numeric", month: "long", year: "numeric" })}${body.trim() ? ` · ${readingTime(body)}` : ""}</span>
           <span class="tools" id="font-controls"></span>
         </div>
-        ${a.cover ? `<img class="cover" src="${esc(a.cover)}" alt="" />` : ""}
+        ${a.cover && !current ? `<img class="cover" src="${esc(a.cover)}" alt="" />` : ""}
+        ${novelTop}
         <div class="prose" id="prose">${renderMarkdown(body)}</div>
+        ${novelBottom}
         ${shareHTML(a.title)}
         <div class="follow no-print">
           <h3>Follow ${esc(site.author || site.name)}</h3>
-          <p class="muted">Naye articles aur notes ki update ke liye judein.</p>
-          <div class="socials center">${socialLinksHTML(site) || `<span class="muted">Links jald aa rahe hain.</span>`}</div>
+          <p class="muted">Follow for updates on new posts.</p>
+          <div class="socials center">${socialLinksHTML(site) || `<span class="muted">Links coming soon.</span>`}</div>
         </div>
         ${more.length ? `<section class="no-print"><div class="section-head"><h2>More ${esc(a.category)}</h2></div>
           <div class="grid">${more.map((m) => `<a class="story" href="article.html?id=${encodeURIComponent(m.id)}">

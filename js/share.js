@@ -1,4 +1,4 @@
-// Share buttons for articles and notes.
+// Share buttons for articles.
 function shareHTML(title) {
   const url = encodeURIComponent(location.href);
   const text = encodeURIComponent(title);

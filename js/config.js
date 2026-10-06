@@ -8,14 +8,8 @@ const SITE_REPO = {
 // Article sections shown on the home page and the Articles page.
 const CATEGORIES = ["Blog", "Story", "Editorial", "Report"];
 
-// Study material types inside each exam subject.
-const ITEM_TYPES = [
-  { id: "long", label: "Long Notes" },
-  { id: "short", label: "Short Notes" },
-  { id: "mindmap", label: "Mind Map" },
-  { id: "pyq", label: "PYQ" },
-  { id: "mock", label: "Mock Test" },
-];
+// Exam Corner (syllabus, notes, PYQ, mock tests) is a separate website.
+const EXAM_CORNER_URL = "https://2529vd-lgtm.github.io/EXAM-CORNER/";
 
 // Social platforms that can be linked from Admin → Settings.
 const SOCIALS = [

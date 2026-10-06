@@ -1,4 +1,4 @@
-// Shared helpers used by every page: theme, header/footer, data loading, markdown, countdowns.
+// Shared helpers used by every page: theme, header/footer, data loading, markdown.
 
 // ---------- Theme (applied immediately to avoid a flash) ----------
 (function () {
@@ -31,11 +31,6 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 50);
-}
-
-// Exam dates are entered in Indian time.
-function examTime(exam) {
-  return new Date(`${exam.date}T${exam.time || "00:00"}:00+05:30`);
 }
 
 // ---------- Data loading (cache-busted so new uploads show quickly) ----------
@@ -93,7 +88,7 @@ async function renderChrome(active) {
   const nav = [
     ["index.html", "Home", "home"],
     ["articles.html", "Articles", "articles"],
-    ["exams.html", "Exam Corner", "exams"],
+    [EXAM_CORNER_URL, "Exam Corner ↗", "exams"],
     ["index.html#about", "About", "about"],
   ];
   const header = document.getElementById("site-header");
@@ -137,33 +132,7 @@ async function renderChrome(active) {
   return site;
 }
 
-// ---------- Countdown ----------
-function countdownHTML(target) {
-  const diff = target - Date.now();
-  if (diff <= 0) return `<span class="cd-done">Exam ho gaya ✅</span>`;
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff / 3600000) % 24);
-  const m = Math.floor((diff / 60000) % 60);
-  const s = Math.floor((diff / 1000) % 60);
-  const box = (n, l) => `<span class="cd-box"><b>${String(n).padStart(2, "0")}</b><small>${l}</small></span>`;
-  return box(d, "Days") + box(h, "Hrs") + box(m, "Min") + box(s, "Sec");
-}
-
-// Keeps every element with data-countdown="<ISO time>" ticking.
-function startCountdowns() {
-  const tick = () =>
-    document.querySelectorAll("[data-countdown]").forEach((el) => {
-      el.innerHTML = countdownHTML(new Date(el.dataset.countdown));
-    });
-  tick();
-  setInterval(tick, 1000);
-}
-
-function daysLeft(target) {
-  return Math.ceil((target - Date.now()) / 86400000);
-}
-
-// ---------- Reading font size (articles and notes) ----------
+// ---------- Reading font size (articles) ----------
 function setupFontControls(container) {
   const el = document.getElementById("font-controls");
   if (!el) return;

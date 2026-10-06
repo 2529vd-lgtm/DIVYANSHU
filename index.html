@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Divyanshu | Portfolio, Blog & Study Notes</title>
+  <meta name="description" content="Divyanshu's personal website: projects, blog posts and study notes for competitive exams." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <nav class="container nav">
+      <a href="index.html" class="logo">Divyanshu<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="index.html#projects">Projects</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+        <li><button class="icon-btn" id="theme-toggle" aria-label="Toggle dark mode">🌙</button></li>
+      </ul>
+      <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <h1>Hi, I'm <span>Divyanshu</span> 👋</h1>
+      <p>I build things, write about what I learn, and share my study notes for competitive exams like BPSC and UPSC.</p>
+      <a href="#projects" class="btn">See my work</a>
+      <a href="notes.html" class="btn outline">Read notes</a>
+    </section>
+
+    <section id="about" class="container">
+      <div class="about">
+        <div class="avatar">D</div>
+        <div>
+          <h2 class="section-title">About Me</h2>
+          <p class="section-sub">Write a few lines about yourself here: where you're from, what you're studying or working on, and what you hope to achieve.</p>
+          <div class="skills" id="skills"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="container">
+      <h2 class="section-title">Projects</h2>
+      <p class="section-sub">Things I've built or am working on.</p>
+      <div class="grid" id="projects-grid"></div>
+    </section>
+
+    <section class="container">
+      <h2 class="section-title">Latest from the Blog</h2>
+      <p class="section-sub">Thoughts, experiences and updates. <a href="blog.html">All posts →</a></p>
+      <div class="grid" id="latest-posts"></div>
+    </section>
+
+    <section class="container">
+      <h2 class="section-title">Study Notes</h2>
+      <p class="section-sub">Short, revision-friendly notes. <a href="notes.html">All notes →</a></p>
+      <div class="grid" id="latest-notes"></div>
+    </section>
+
+    <section id="contact" class="container">
+      <h2 class="section-title">Contact</h2>
+      <p class="section-sub">Have a question or want to connect? Send me a message.</p>
+      <!-- Change data-email to the address you want messages sent to. -->
+      <form class="contact-form" id="contact-form" data-email="your-email@example.com">
+        <input name="name" type="text" placeholder="Your name" required />
+        <input name="email" type="email" placeholder="Your email" required />
+        <textarea name="message" placeholder="Your message" required></textarea>
+        <button class="btn" type="submit" style="justify-self:start">Send message</button>
+        <p class="form-status" id="form-status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">© <span id="year"></span> Divyanshu · Built with HTML, CSS & JavaScript</div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

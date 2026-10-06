@@ -2,7 +2,7 @@
 
 A newspaper-style website with **Blogs, Stories, Editorials and Reports**.
 
-The **Exam Corner** (exam countdowns, syllabus, notes, mind maps, PYQs and mock tests) is now its own website: [2529vd-lgtm/EXAM-CORNER](https://github.com/2529vd-lgtm/EXAM-CORNER), live at https://2529vd-lgtm.github.io/EXAM-CORNER/. The home page and the menu link to it.
+The **Exam Corner** (exam countdowns, syllabus, notes, mind maps, PYQs and mock tests) is now its own website: [2529vd-lgtm/EXAM-CORNER](https://github.com/2529vd-lgtm/EXAM-CORNER), live at https://2529vd-lgtm.github.io/EXAM-CORNER/.
 
 It's a plain HTML/CSS/JS site hosted free on GitHub Pages. There's no server and no build step.
 
@@ -30,7 +30,7 @@ Every save becomes a commit in this repo. The live site updates 1–2 minutes la
 | `admin.html` | Upload and edit everything |
 | `content/` | All content: `site.json`, `articles.json`, plus the article files |
 | `uploads/` | Photos and PDFs uploaded from the Admin page |
-| `js/config.js` | Repo/branch used by Admin, Exam Corner link, article categories, social platforms |
+| `js/config.js` | Repo/branch used by Admin, article categories, social platforms |
 | `js/vendor/` | Bundled libraries: marked and DOMPurify |
 
 ## Writing tips

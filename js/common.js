@@ -88,7 +88,6 @@ async function renderChrome(active) {
   const nav = [
     ["index.html", "Home", "home"],
     ["articles.html", "Articles", "articles"],
-    [EXAM_CORNER_URL, "Exam Corner ↗", "exams"],
     ["index.html#about", "About", "about"],
   ];
   const header = document.getElementById("site-header");

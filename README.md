@@ -15,6 +15,10 @@ Open **`/admin.html`** on the live site (or use the "Admin" link in the footer) 
 - **📰 Articles:** write or edit a Blog, Story, Editorial or Report, with photos, PDFs, tables and a live preview.
 - **🔗 Social & Settings:** add your social media links (each shows its logo on the site), your photo and your About text.
 
+**Novels:** create a Story, tick **📖 This is a novel**, then use **Chapters → Add Chapter** to upload chapters one by one. Readers get two options: read chapter by chapter (with next/previous buttons) or read the full novel on one page. Chapters are saved in `content/articles/<id>/chapter-<n>.md`.
+
+When you change a CSS or JS file, bump the `?v=` number in the HTML files so visitors' browsers load the new version.
+
 Every save becomes a commit in this repo. The live site updates 1–2 minutes later.
 
 ## Where things live

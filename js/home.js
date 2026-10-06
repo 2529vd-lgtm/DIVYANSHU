@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Lead story + headlines
   const lead = document.getElementById("lead");
   if (!articles.length) {
-    lead.innerHTML = `<p class="empty">Abhi koi article nahi hai. Admin page se upload karein.</p>`;
+    lead.innerHTML = `<p class="empty">No articles yet. Upload one from the Admin page.</p>`;
   } else {
     const [top, ...rest] = articles;
     lead.innerHTML = `
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       </a>
       <div class="headlines">
         ${rest.slice(0, 5).map((a) => storyHTML(a, { thumb: false, summary: false })).join("") ||
-          `<p class="muted">Aur articles jald aa rahe hain.</p>`}
+          `<p class="muted">More articles coming soon.</p>`}
       </div>`;
   }
 
@@ -48,12 +48,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const list = articles.filter((a) => a.category === cat).slice(0, 3);
     if (!list.length) return "";
     return `<section class="container">
-      <div class="section-head"><h2>${esc(cat)}</h2><a href="articles.html?cat=${encodeURIComponent(cat)}">Sab dekhein →</a></div>
+      <div class="section-head"><h2>${esc(cat)}</h2><a href="articles.html?cat=${encodeURIComponent(cat)}">See all →</a></div>
       <div class="grid">${list.map((a) => storyHTML(a)).join("")}</div>
     </section>`;
   }).join("");
-
-  document.getElementById("exam-corner-link").href = EXAM_CORNER_URL;
 
   // About + socials
   document.getElementById("about-name").textContent = site.author || site.name;
@@ -63,5 +61,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     : esc((site.author || site.name || "?")[0]);
   const socials = socialLinksHTML(site);
   document.getElementById("about-socials").innerHTML =
-    socials || `<p class="muted">Social media links jald aa rahe hain.</p>`;
+    socials || `<p class="muted">Social media links coming soon.</p>`;
 });

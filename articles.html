@@ -6,7 +6,7 @@
   <title>Articles</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
   <div id="site-header"></div>
@@ -21,9 +21,9 @@
 
   <div id="site-footer"></div>
 
-  <script src="js/config.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/common.js"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/icons.js?v=3"></script>
+  <script src="js/common.js?v=3"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await renderChrome("articles");
@@ -61,7 +61,7 @@
                 </a>`
               )
               .join("")
-          : `<p class="empty">Is section mein abhi kuch nahi hai.</p>`;
+          : `<p class="empty">Nothing in this section yet.</p>`;
       };
       cats.addEventListener("click", (e) => {
         const b = e.target.closest(".tab");

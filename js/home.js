@@ -14,29 +14,14 @@ function storyHTML(a, { thumb = true, summary = true } = {}) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const site = await renderChrome("home");
-  const [articlesData, examsData] = await Promise.all([
-    loadJSON("content/articles.json", { articles: [] }),
-    loadJSON("content/exams.json", { exams: [] }),
-  ]);
+  const articlesData = await loadJSON("content/articles.json", { articles: [] });
   const articles = [...articlesData.articles].sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  const upcoming = examsData.exams
-    .filter((e) => examTime(e) > Date.now())
-    .sort((a, b) => examTime(a) - examTime(b));
 
   // Masthead
   document.getElementById("masthead").innerHTML = `
     <div class="date">${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
     <h1>${esc(site.name)}</h1>
     <p>${esc(site.tagline || "")}</p>`;
-
-  // Exam ticker
-  const ticker = document.getElementById("ticker");
-  if (upcoming.length) {
-    const items = upcoming
-      .map((e) => `<a href="exam.html?id=${encodeURIComponent(e.id)}">📅 ${esc(e.name)}: <b>${daysLeft(examTime(e))} din baaki</b> (${fmtDate(e.date)})</a>`)
-      .join("");
-    ticker.innerHTML = `<span class="label">Exam Alert</span><div class="track">${items}${items}</div>`;
-  } else ticker.remove();
 
   // Lead story + headlines
   const lead = document.getElementById("lead");
@@ -68,13 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     </section>`;
   }).join("");
 
-  // Exam corner preview
-  const examGrid = document.getElementById("exam-preview");
-  const shown = upcoming.length ? upcoming : examsData.exams;
-  examGrid.innerHTML = shown.length
-    ? shown.slice(0, 3).map(examCardHTML).join("")
-    : `<p class="empty">Abhi koi exam add nahi hua hai.</p>`;
-  startCountdowns();
+  document.getElementById("exam-corner-link").href = EXAM_CORNER_URL;
 
   // About + socials
   document.getElementById("about-name").textContent = site.author || site.name;
@@ -86,13 +65,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("about-socials").innerHTML =
     socials || `<p class="muted">Social media links jald aa rahe hain.</p>`;
 });
-
-function examCardHTML(e) {
-  return `<a class="card exam-card" href="exam.html?id=${encodeURIComponent(e.id)}">
-    <span class="tag">${fmtDate(e.date, { day: "numeric", month: "long", year: "numeric" })}</span>
-    <h3 style="margin-top:8px">${esc(e.name)}</h3>
-    ${e.fullName ? `<p>${esc(e.fullName)}</p>` : ""}
-    <div class="countdown" data-countdown="${examTime(e).toISOString()}"></div>
-    <span class="btn small">Syllabus, Notes, PYQ, Mock →</span>
-  </a>`;
-}

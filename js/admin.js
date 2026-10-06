@@ -1,16 +1,13 @@
-// Admin page: upload and edit articles, exams, study material and site settings.
+// Admin page: upload and edit articles and site settings.
 // Content lives in the content/ folder; every save becomes a commit on GitHub.
 
 const PATHS = {
   site: "content/site.json",
   articles: "content/articles.json",
-  exams: "content/exams.json",
-  items: "content/exam-items.json",
   article: (id) => `content/articles/${id}.md`,
-  item: (it) => `content/exam-items/${it.id}.${it.type === "mock" ? "json" : "md"}`,
 };
 const MAX_UPLOAD_MB = 25;
-const DB = { site: {}, articles: [], exams: [], items: [] };
+const DB = { site: {}, articles: [] };
 let currentTab = "articles";
 
 const $ = (id) => document.getElementById(id);
@@ -65,17 +62,13 @@ async function login(token, remember) {
 }
 
 async function loadAll() {
-  const [site, articles, exams, items] = await Promise.all([
+  const [site, articles] = await Promise.all([
     GH.readJSON(PATHS.site, { socials: {} }),
     GH.readJSON(PATHS.articles, { articles: [] }),
-    GH.readJSON(PATHS.exams, { exams: [] }),
-    GH.readJSON(PATHS.items, { items: [] }),
   ]);
   DB.site = site.data;
   DB.site.socials = DB.site.socials || {};
   DB.articles = articles.data.articles || [];
-  DB.exams = exams.data.exams || [];
-  DB.items = items.data.items || [];
 }
 
 function logout() {
@@ -87,7 +80,7 @@ function logout() {
 function showTab(tab) {
   currentTab = tab;
   document.querySelectorAll("#admin-tabs .tab[data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
-  ({ articles: articleList, exams: examList, items: itemList, settings: settingsForm })[tab]();
+  ({ articles: articleList, settings: settingsForm })[tab]();
 }
 
 // ---------- Rich text editor (Markdown with toolbar + preview + uploads) ----------
@@ -101,7 +94,6 @@ const TOOLS = [
   ["❝ Quote", "Quote / highlight box", (s) => `\n> ${s || "Important line"}\n`],
   ["🔗 Link", "Link", (s) => `[${s || "link text"}](https://)`],
   ["▦ Table", "Table", () => `\n| Column 1 | Column 2 |\n|---|---|\n| ... | ... |\n`],
-  ["🙈 Answer", "Answer jo click karne par dikhe (PYQ ke liye)", (s) => `\n<details><summary>Answer dekhein</summary>\n\n${s || "Answer yahan likhein"}\n\n</details>\n`],
   ["― Line", "Divider line", () => `\n---\n`],
 ];
 
@@ -300,415 +292,6 @@ async function articleForm(a) {
       status(PUBLISHED(`article.html?id=${encodeURIComponent(meta.id)}`), "ok");
     });
   };
-}
-
-// =====================================================================
-// Exams
-// =====================================================================
-function examList() {
-  const list = [...DB.exams].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  $("view").innerHTML = `<div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
-      <h2 style="margin:0">Exams (${list.length})</h2>
-      <button class="btn" id="new-exam">+ Naya exam</button>
-    </div>
-    <p class="help">Exam ka naam, date (countdown ke liye), syllabus aur subjects yahan set karein. Notes/PYQ/Mock "Study Material" tab se daalein.</p>
-    <ul class="admin-list">
-      ${list.map((e) => `<li><div><b>${esc(e.name)}</b><div class="meta">${fmtDate(e.date)} · ${(e.subjects || []).length} subjects · ${DB.items.filter((i) => i.exam === e.id).length} items</div></div>
-        <span class="actions">
-          <a class="btn small ghost" href="exam.html?id=${encodeURIComponent(e.id)}" target="_blank">View</a>
-          <button class="btn small ghost" data-edit="${esc(e.id)}">Edit</button>
-          <button class="btn small outline" data-del="${esc(e.id)}">Delete</button>
-        </span></li>`).join("") || `<li class="muted">Abhi koi exam nahi hai.</li>`}
-    </ul>
-  </div>`;
-  $("new-exam").onclick = () => examForm(null);
-  $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => examForm(DB.exams.find((e) => e.id === b.dataset.edit))));
-  $("view").querySelectorAll("[data-del]").forEach((b) =>
-    (b.onclick = () => {
-      const ex = DB.exams.find((e) => e.id === b.dataset.del);
-      const count = DB.items.filter((i) => i.exam === ex.id).length;
-      if (count) return status(`⚠️ "${esc(ex.name)}" mein ${count} notes/tests hain. Pehle unhe Study Material tab se delete karein.`, "err");
-      if (!confirm(`"${ex.name}" delete karein?`)) return;
-      busy(b, "…", async () => {
-        const data = await GH.updateJSON(PATHS.exams, { exams: [] }, (d) => {
-          d.exams = d.exams.filter((x) => x.id !== ex.id);
-        }, `Delete exam: ${ex.name}`);
-        DB.exams = data.exams;
-        examList();
-        status("🗑️ Exam delete ho gaya.", "ok");
-      });
-    })
-  );
-}
-
-function subjectRowHTML(s = {}) {
-  return `<div class="subject-row" data-id="${esc(s.id || "")}">
-    <input class="subject-name" value="${esc(s.name || "")}" placeholder="Subject ka naam, jaise History" />
-    <button type="button" class="btn small outline" data-remove-subject>✕</button>
-  </div>`;
-}
-
-function examForm(ex) {
-  $("view").innerHTML = `<div class="panel">
-    <h2>${ex ? "Exam edit karein" : "Naya exam"}</h2>
-    <div class="row">
-      <div class="field"><label for="e-name">Exam ka naam *</label><input id="e-name" value="${esc(ex?.name)}" placeholder="BPSC 72nd Prelims" /></div>
-      <div class="field"><label for="e-full">Poora naam (optional)</label><input id="e-full" value="${esc(ex?.fullName)}" placeholder="Bihar Public Service Commission…" /></div>
-    </div>
-    <div class="row">
-      <div class="field"><label for="e-date">Exam date *</label><input type="date" id="e-date" value="${esc(ex?.date)}" /></div>
-      <div class="field"><label for="e-time">Time (optional)</label><input type="time" id="e-time" value="${esc(ex?.time)}" /></div>
-    </div>
-    <div class="field"><label for="e-desc">Short info (pattern, marks, etc.)</label><textarea id="e-desc" rows="4" style="min-height:0">${esc(ex?.description)}</textarea></div>
-    <div class="field"><label>Syllabus</label>${editorHTML("e-syllabus", ex?.syllabus, 14)}</div>
-    <div class="field"><label>Subjects</label>
-      <div id="subjects">${(ex?.subjects?.length ? ex.subjects : [{}]).map(subjectRowHTML).join("")}</div>
-      <button type="button" class="btn small ghost" id="add-subject">+ Subject jodein</button>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="e-save">${ex ? "Update karein" : "💾 Save karein"}</button>
-      <button class="btn ghost" id="e-cancel">Cancel</button>
-    </div>
-  </div>`;
-  setupEditors($("view"));
-  $("e-cancel").onclick = examList;
-  $("add-subject").onclick = () => $("subjects").insertAdjacentHTML("beforeend", subjectRowHTML());
-  $("subjects").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-remove-subject]");
-    if (!b) return;
-    const row = b.closest(".subject-row");
-    const used = ex && row.dataset.id && DB.items.some((i) => i.exam === ex.id && i.subject === row.dataset.id);
-    if (used && !confirm("Is subject mein notes/tests hain. Hatane par wo 'General' mein dikhenge. Hatayein?")) return;
-    row.remove();
-  });
-  $("e-save").onclick = () => {
-    const taken = new Set();
-    const subjects = [...document.querySelectorAll(".subject-row")]
-      .map((row, i) => {
-        const name = row.querySelector(".subject-name").value.trim();
-        if (!name) return null;
-        let id = row.dataset.id || slugify(name) || `subject-${i + 1}`;
-        while (taken.has(id)) id += "-2";
-        taken.add(id);
-        return { id, name };
-      })
-      .filter(Boolean);
-    const exam = {
-      id: ex?.id || makeId($("e-name").value, "exam"),
-      name: $("e-name").value.trim(),
-      fullName: $("e-full").value.trim(),
-      date: $("e-date").value,
-      time: $("e-time").value,
-      description: $("e-desc").value.trim(),
-      syllabus: $("e-syllabus").value,
-      subjects,
-    };
-    if (!exam.name || !exam.date) return status("⚠️ Exam ka naam aur date zaroori hai.", "err");
-    busy($("e-save"), "Saving…", async () => {
-      const data = await GH.updateJSON(PATHS.exams, { exams: [] }, (d) => {
-        const i = d.exams.findIndex((x) => x.id === exam.id);
-        if (i >= 0) d.exams[i] = exam;
-        else d.exams.push(exam);
-      }, `${ex ? "Update" : "Add"} exam: ${exam.name}`);
-      DB.exams = data.exams;
-      examList();
-      status(PUBLISHED(`exam.html?id=${encodeURIComponent(exam.id)}`), "ok");
-    });
-  };
-}
-
-// =====================================================================
-// Study material (long/short notes, mind map, PYQ, mock test)
-// =====================================================================
-let itemFilter = "";
-
-function itemList() {
-  if (!DB.exams.length) {
-    $("view").innerHTML = `<div class="panel"><p>Pehle <b>Exams</b> tab mein ek exam banayein, phir uske notes yahan daalein.</p></div>`;
-    return;
-  }
-  const typeLabel = (t) => (ITEM_TYPES.find((x) => x.id === t) || {}).label || t;
-  const list = DB.items.filter((i) => !itemFilter || i.exam === itemFilter).sort(byDate);
-  $("view").innerHTML = `<div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-      <h2 style="margin:0">Study Material (${list.length})</h2>
-      <button class="btn" id="new-item">+ Naya notes / PYQ / mock</button>
-    </div>
-    <div class="field"><select id="item-filter"><option value="">Sab exams</option>
-      ${DB.exams.map((e) => `<option value="${esc(e.id)}" ${e.id === itemFilter ? "selected" : ""}>${esc(e.name)}</option>`).join("")}</select></div>
-    <ul class="admin-list">
-      ${list.map((i) => {
-        const ex = DB.exams.find((e) => e.id === i.exam);
-        const sub = ex?.subjects?.find((s) => s.id === i.subject);
-        const href = i.type === "mock" ? `mock.html?id=${encodeURIComponent(i.id)}` : `item.html?id=${encodeURIComponent(i.id)}`;
-        return `<li><div><b>${esc(i.title)}</b><div class="meta">${esc(typeLabel(i.type))} · ${esc(ex?.name || "?")} · ${esc(sub?.name || "General")}</div></div>
-          <span class="actions">
-            <a class="btn small ghost" href="${href}" target="_blank">View</a>
-            <button class="btn small ghost" data-edit="${esc(i.id)}">Edit</button>
-            <button class="btn small outline" data-del="${esc(i.id)}">Delete</button>
-          </span></li>`;
-      }).join("") || `<li class="muted">Abhi kuch nahi hai.</li>`}
-    </ul>
-  </div>`;
-  $("item-filter").onchange = (e) => { itemFilter = e.target.value; itemList(); };
-  $("new-item").onclick = () => itemForm(null);
-  $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => itemForm(DB.items.find((i) => i.id === b.dataset.edit))));
-  $("view").querySelectorAll("[data-del]").forEach((b) =>
-    (b.onclick = () => {
-      const it = DB.items.find((x) => x.id === b.dataset.del);
-      if (!confirm(`"${it.title}" delete karein?`)) return;
-      busy(b, "…", async () => {
-        await GH.remove(PATHS.item(it), `Delete ${it.type}: ${it.title}`);
-        const data = await GH.updateJSON(PATHS.items, { items: [] }, (d) => {
-          d.items = d.items.filter((x) => x.id !== it.id);
-        }, `Remove from study material index: ${it.title}`);
-        DB.items = data.items;
-        itemList();
-        status("🗑️ Delete ho gaya.", "ok");
-      });
-    })
-  );
-}
-
-const TYPE_HELP = {
-  long: "Detail notes likhein. Heading, list, table, photo sab use kar sakte hain.",
-  short: "Revision ke liye chhote points likhein.",
-  mindmap: "Mind map ke liye: sabse upar <code># Topic</code>, phir <code>## Branch</code> aur unke neeche <code>- point</code> likhein. Ye apne aap mind map ban jayega. Ya sirf 🖼️ Photo button se mind map ki image upload kar dein.",
-  pyq: "Question likhein, aur answer ko <b>🙈 Answer</b> button se chhupa dein taaki padhne wala pehle khud soche. PDF bhi 📎 se upload kar sakte hain.",
-};
-
-const MINDMAP_TEMPLATE = `# Topic ka naam
-## Branch 1
-- Point 1
-- Point 2
-## Branch 2
-- Point 1
-  - Sub point
-## Branch 3
-- Point 1
-`;
-
-let mockQs = [];
-
-async function itemForm(it) {
-  let body = "";
-  let test = { duration: 10, negative: 0, questions: [] };
-  if (it) {
-    status("⏳ Load ho raha hai…");
-    const f = await GH.read(PATHS.item(it));
-    status("");
-    if (f) {
-      if (it.type === "mock") test = JSON.parse(f.text);
-      else body = f.text;
-    }
-  }
-  mockQs = (test.questions || []).map((q) => ({ ...q, options: [...q.options, "", "", "", ""].slice(0, Math.max(4, q.options.length)) }));
-  const examId = it?.exam || itemFilter || DB.exams[0].id;
-
-  $("view").innerHTML = `<div class="panel">
-    <h2>${it ? "Edit karein" : "Naya study material"}</h2>
-    <div class="row">
-      <div class="field"><label for="i-exam">Exam *</label><select id="i-exam">
-        ${DB.exams.map((e) => `<option value="${esc(e.id)}" ${e.id === examId ? "selected" : ""}>${esc(e.name)}</option>`).join("")}</select></div>
-      <div class="field"><label for="i-subject">Subject</label><select id="i-subject"></select></div>
-      <div class="field"><label for="i-type">Type *</label><select id="i-type" ${it ? "disabled" : ""}>
-        ${ITEM_TYPES.map((t) => `<option value="${t.id}" ${it?.type === t.id ? "selected" : ""}>${t.label}</option>`).join("")}</select></div>
-    </div>
-    <div class="row">
-      <div class="field" style="grid-column: span 2"><label for="i-title">Title *</label><input id="i-title" value="${esc(it?.title)}" placeholder="Jaise: Fundamental Rights" /></div>
-      <div class="field"><label for="i-date">Date</label><input type="date" id="i-date" value="${esc(it?.date || today())}" /></div>
-    </div>
-    <div class="field"><label for="i-summary">Short description (optional)</label><input id="i-summary" value="${esc(it?.summary)}" /></div>
-
-    <div id="notes-box">
-      <p class="help" id="type-help" style="margin-bottom:8px"></p>
-      ${editorHTML("i-body", body, 20)}
-    </div>
-
-    <div id="mock-box">
-      <div class="row">
-        <div class="field"><label for="m-duration">Time (minutes)</label><input type="number" min="1" id="m-duration" value="${esc(test.duration)}" /></div>
-        <div class="field"><label for="m-negative">Negative marking (galat answer par kitna katega)</label><input type="number" min="0" step="0.01" id="m-negative" value="${esc(test.negative)}" /></div>
-      </div>
-      <details class="qbuild" style="margin-bottom:14px">
-        <summary><b>⚡ Bahut saare questions ek saath paste karein</b></summary>
-        <p class="help">Is format mein likhein (Word/WhatsApp se copy-paste bhi chalega):</p>
-        <pre class="help" style="background:var(--surface);padding:8px;border-radius:6px;overflow-x:auto">1. Question ka text?
-A) Option 1
-B) Option 2
-C) Option 3
-D) Option 4
-Answer: B
-Explanation: Kyunki…</pre>
-        <textarea id="bulk" rows="8" placeholder="Questions yahan paste karein…"></textarea>
-        <button type="button" class="btn small" id="bulk-add" style="margin-top:8px">Questions jodein</button>
-      </details>
-      <div id="qlist"></div>
-      <button type="button" class="btn small ghost" id="add-q">+ Ek question jodein</button>
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button class="btn" id="i-save">${it ? "Update karein" : "🚀 Publish karein"}</button>
-      <button class="btn ghost" id="i-cancel">Cancel</button>
-    </div>
-  </div>`;
-  setupEditors($("view"));
-  $("i-cancel").onclick = itemList;
-
-  const fillSubjects = () => {
-    const ex = DB.exams.find((e) => e.id === $("i-exam").value);
-    $("i-subject").innerHTML = `<option value="">General</option>` +
-      (ex?.subjects || []).map((s) => `<option value="${esc(s.id)}" ${it?.subject === s.id ? "selected" : ""}>${esc(s.name)}</option>`).join("");
-  };
-  const typeChanged = () => {
-    const t = $("i-type").value;
-    $("notes-box").classList.toggle("hidden", t === "mock");
-    $("mock-box").classList.toggle("hidden", t !== "mock");
-    $("type-help").innerHTML = TYPE_HELP[t] || "";
-    if (t === "mindmap" && !$("i-body").value.trim()) $("i-body").value = MINDMAP_TEMPLATE;
-    if (t !== "mindmap" && $("i-body").value === MINDMAP_TEMPLATE) $("i-body").value = "";
-  };
-  $("i-exam").onchange = fillSubjects;
-  $("i-type").onchange = typeChanged;
-  fillSubjects();
-  typeChanged();
-
-  // Mock question builder
-  drawQuestions();
-  $("add-q").onclick = () => { mockQs.push({ q: "", options: ["", "", "", ""], answer: null, explanation: "" }); drawQuestions(); };
-  $("bulk-add").onclick = () => {
-    const parsed = parseQuestions($("bulk").value);
-    if (!parsed.length) return status("⚠️ Koi question samajh nahi aaya. Upar diya format check karein.", "err");
-    mockQs.push(...parsed);
-    $("bulk").value = "";
-    drawQuestions();
-    const noAns = parsed.filter((q) => q.answer === null).length;
-    status(`✅ ${parsed.length} questions jud gaye.${noAns ? ` ⚠️ ${noAns} mein answer nahi mila, neeche sahi option chunein.` : ""}`, noAns ? "info" : "ok");
-  };
-
-  $("i-save").onclick = () => {
-    const type = $("i-type").value;
-    const meta = {
-      id: it?.id || makeId($("i-title").value, type),
-      exam: $("i-exam").value,
-      subject: $("i-subject").value,
-      type,
-      title: $("i-title").value.trim(),
-      summary: $("i-summary").value.trim(),
-      date: $("i-date").value || today(),
-    };
-    if (!meta.title) return status("⚠️ Title zaroori hai.", "err");
-    let content;
-    if (type === "mock") {
-      const questions = [];
-      for (const [n, q] of mockQs.entries()) {
-        const opts = q.options.map((o, i) => ({ o: o.trim(), i })).filter((x) => x.o);
-        const ans = opts.findIndex((x) => x.i === q.answer);
-        if (!q.q.trim() || opts.length < 2 || ans < 0)
-          return status(`⚠️ Question ${n + 1} adhoora hai: question, kam se kam 2 options aur sahi answer chunna zaroori hai.`, "err");
-        questions.push({ q: q.q.trim(), options: opts.map((x) => x.o), answer: ans, explanation: (q.explanation || "").trim() });
-      }
-      if (!questions.length) return status("⚠️ Kam se kam ek question jodein.", "err");
-      const duration = Math.max(1, Number($("m-duration").value) || questions.length);
-      const negative = Math.max(0, Number($("m-negative").value) || 0);
-      content = JSON.stringify({ duration, negative, questions }, null, 2) + "\n";
-      Object.assign(meta, { questions: questions.length, duration });
-    } else {
-      content = $("i-body").value;
-      if (!content.trim()) return status("⚠️ Kuch content likhein.", "err");
-    }
-    busy($("i-save"), "Saving…", async () => {
-      await GH.put(PATHS.item(meta), content, `${it ? "Update" : "Publish"} ${type}: ${meta.title}`);
-      const data = await GH.updateJSON(PATHS.items, { items: [] }, (d) => {
-        d.items = [meta, ...d.items.filter((x) => x.id !== meta.id)];
-      }, `Update study material index: ${meta.title}`);
-      DB.items = data.items;
-      itemFilter = meta.exam;
-      itemList();
-      status(PUBLISHED(type === "mock" ? `mock.html?id=${encodeURIComponent(meta.id)}` : `item.html?id=${encodeURIComponent(meta.id)}`), "ok");
-    });
-  };
-}
-
-function drawQuestions() {
-  const box = $("qlist");
-  box.innerHTML = mockQs
-    .map(
-      (q, n) => `<div class="qbuild" data-n="${n}">
-        <div style="display:flex;justify-content:space-between;align-items:center"><b>Question ${n + 1}</b>
-          <button type="button" class="btn small outline" data-remove-q>✕ Hatayein</button></div>
-        <textarea data-f="q" rows="2" style="min-height:0;margin-top:6px" placeholder="Question likhein">${esc(q.q)}</textarea>
-        <div class="opts">
-          ${q.options.map((o, i) => `<input type="radio" name="ans-${n}" data-ans="${i}" ${q.answer === i ? "checked" : ""} title="Sahi answer" />
-            <input data-opt="${i}" value="${esc(o)}" placeholder="Option ${"ABCDEF"[i]}" />`).join("")}
-        </div>
-        <p class="help">⬅️ Sahi answer ke aage wala gola chunein.</p>
-        <input data-f="explanation" value="${esc(q.explanation)}" placeholder="Explanation (optional)" style="margin-top:6px" />
-      </div>`
-    )
-    .join("");
-  box.oninput = (e) => {
-    const card = e.target.closest("[data-n]");
-    if (!card) return;
-    const q = mockQs[card.dataset.n];
-    if (e.target.dataset.f) q[e.target.dataset.f] = e.target.value;
-    if (e.target.dataset.opt !== undefined) q.options[e.target.dataset.opt] = e.target.value;
-  };
-  box.onchange = (e) => {
-    const card = e.target.closest("[data-n]");
-    if (card && e.target.dataset.ans !== undefined) mockQs[card.dataset.n].answer = Number(e.target.dataset.ans);
-  };
-  box.onclick = (e) => {
-    const card = e.target.closest("[data-n]");
-    if (card && e.target.closest("[data-remove-q]")) {
-      mockQs.splice(Number(card.dataset.n), 1);
-      drawQuestions();
-    }
-  };
-}
-
-// Parses pasted questions in the "1. … / A) … / Answer: B / Explanation: …" format.
-function parseQuestions(text) {
-  const out = [];
-  let q = null;
-  let stage = "q";
-  const finish = () => {
-    if (q && q.q.trim() && q.options.length >= 2) {
-      while (q.options.length < 4) q.options.push("");
-      out.push(q);
-    }
-  };
-  for (const raw of String(text).split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line) continue;
-    let m;
-    // A numbered line starts a new question, unless we're still inside a question's text
-    // (UPSC-style "1. Statement" lines belong to the current question).
-    const numbered = (!q || stage !== "q") && line.match(/^(?:q(?:ues(?:tion)?)?\s*)?(\d+)\s*[.):-]\s*(.*)$/i);
-    if ((m = numbered) || (m = line.match(/^(?:q|ques|question|प्रश्न)\s*[.:-]\s*(.*)$/i))) {
-      finish();
-      q = { q: (m[2] ?? m[1]) || "", options: [], answer: null, explanation: "" };
-      stage = "q";
-    } else if (q && (m = line.match(/^(?:ans(?:wer)?|correct(?: answer)?|उत्तर)\s*[.:-]?\s*\(?([a-f])\)?\b/i))) {
-      q.answer = m[1].toUpperCase().charCodeAt(0) - 65;
-      stage = "a";
-    } else if (q && (m = line.match(/^(?:exp(?:lanation)?|sol(?:ution)?|व्याख्या)\s*[.:-]\s*(.*)$/i))) {
-      q.explanation = m[1];
-      stage = "e";
-    } else if (q && stage !== "a" && stage !== "e" && (m = line.match(/^\(?([a-f])\s*[).:]\s*(.+)$/i))) {
-      q.options.push(m[2].trim());
-      stage = "o";
-    } else if (q && stage === "q") {
-      q.q += (q.q ? "\n" : "") + line;
-    } else if (q && stage === "e") {
-      q.explanation += " " + line;
-    } else if (!q) {
-      q = { q: line, options: [], answer: null, explanation: "" };
-    }
-  }
-  finish();
-  return out;
 }
 
 // =====================================================================

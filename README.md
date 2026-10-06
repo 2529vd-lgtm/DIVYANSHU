@@ -1,6 +1,8 @@
 # Divyanshu's Website
 
-A newspaper-style website with **Blogs, Stories, Editorials and Reports**, plus an **Exam Corner**. Each exam has a countdown, its syllabus, and subject-wise long notes, short notes, mind maps, PYQs and mock tests.
+A newspaper-style website with **Blogs, Stories, Editorials and Reports**.
+
+The **Exam Corner** (exam countdowns, syllabus, notes, mind maps, PYQs and mock tests) is now its own website: [2529vd-lgtm/EXAM-CORNER](https://github.com/2529vd-lgtm/EXAM-CORNER), live at https://2529vd-lgtm.github.io/EXAM-CORNER/. The home page and the menu link to it.
 
 It's a plain HTML/CSS/JS site hosted free on GitHub Pages. There's no server and no build step.
 
@@ -11,8 +13,6 @@ Live site: https://2529vd-lgtm.github.io/DIVYANSHU/
 Open **`/admin.html`** on the live site (or use the "Admin" link in the footer) and log in with a GitHub token. The login box has step-by-step instructions for creating the token. After that you can:
 
 - **📰 Articles:** write or edit a Blog, Story, Editorial or Report, with photos, PDFs, tables and a live preview.
-- **🎯 Exams:** add an exam with its date (shown as a countdown), syllabus and subjects.
-- **📚 Study Material:** add Long Notes, Short Notes, Mind Maps, PYQs or Mock Tests to any exam subject. You can paste many mock-test questions at once.
 - **🔗 Social & Settings:** add your social media links (each shows its logo on the site), your photo and your About text.
 
 Every save becomes a commit in this repo. The live site updates 1–2 minutes later.
@@ -21,23 +21,17 @@ Every save becomes a commit in this repo. The live site updates 1–2 minutes la
 
 | Path | What it is |
 |---|---|
-| `index.html` | Home page: masthead, exam ticker, lead story, sections, Exam Corner, About |
+| `index.html` | Home page: masthead, lead story, sections, Exam Corner link, About |
 | `articles.html`, `article.html` | Article list and reader |
-| `exams.html`, `exam.html` | Exam list with countdowns, and the exam page (syllabus and study material) |
-| `item.html` | Reader for notes, mind maps and PYQs |
-| `mock.html` | Timed mock test with scoring and answer review |
 | `admin.html` | Upload and edit everything |
-| `content/` | All content: `site.json`, `articles.json`, `exams.json`, `exam-items.json`, plus the article and notes files |
+| `content/` | All content: `site.json`, `articles.json`, plus the article files |
 | `uploads/` | Photos and PDFs uploaded from the Admin page |
-| `js/config.js` | Repo/branch used by Admin, article categories, study-material types, social platforms |
-| `js/vendor/` | Bundled libraries: marked, DOMPurify, d3 and markmap (for mind maps) |
+| `js/config.js` | Repo/branch used by Admin, Exam Corner link, article categories, social platforms |
+| `js/vendor/` | Bundled libraries: marked and DOMPurify |
 
 ## Writing tips
 
-Articles and notes use Markdown. The Admin toolbar inserts the syntax for you.
-
-- **Mind map:** start with `# Topic`, then `## Branch`, then `- point` lines underneath. Or upload an image instead.
-- **PYQ:** use the **🙈 Answer** button to hide an answer until the reader clicks it.
+Articles use Markdown. The Admin toolbar inserts the syntax for you.
 
 ## View it locally
 
@@ -52,4 +46,4 @@ Then visit http://localhost:8000.
 ## Credits
 
 Social media icons are from [Font Awesome Free](https://fontawesome.com), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT), [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0), [d3](https://d3js.org) (ISC) and [markmap](https://markmap.js.org) (MIT).
+Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT) and [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0).

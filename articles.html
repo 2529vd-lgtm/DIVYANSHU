@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Articles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container" style="padding-top:28px;padding-bottom:20px">
+    <h1 class="page-title">Articles</h1>
+    <p class="page-sub">Blogs, stories, editorials and reports.</p>
+    <div class="tabs" id="cats"></div>
+    <div class="toolbar"><input type="search" id="search" placeholder="Search articles…" /></div>
+    <div id="list"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await renderChrome("articles");
+      const { articles } = await loadJSON("content/articles.json", { articles: [] });
+      articles.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      let active = CATEGORIES.includes(param("cat")) ? param("cat") : "All";
+      const cats = document.getElementById("cats");
+      const search = document.getElementById("search");
+      const list = document.getElementById("list");
+
+      const drawTabs = () => {
+        cats.innerHTML = ["All", ...CATEGORIES]
+          .map((c) => {
+            const n = c === "All" ? articles.length : articles.filter((a) => a.category === c).length;
+            return `<button class="tab ${c === active ? "active" : ""}" data-cat="${c}">${c}<span class="count">${n}</span></button>`;
+          })
+          .join("");
+      };
+      const draw = () => {
+        const q = search.value.trim().toLowerCase();
+        const shown = articles.filter(
+          (a) => (active === "All" || a.category === active) && `${a.title} ${a.summary}`.toLowerCase().includes(q)
+        );
+        list.innerHTML = shown.length
+          ? shown
+              .map(
+                (a) => `<a class="story list-item" href="article.html?id=${encodeURIComponent(a.id)}">
+                  <div>
+                    <span class="kicker">${esc(a.category)}</span>
+                    <h3>${esc(a.title)}</h3>
+                    ${a.summary ? `<p>${esc(a.summary)}</p>` : ""}
+                    <div class="meta">${esc(a.author || "")}${a.author ? " · " : ""}${fmtDate(a.date)}</div>
+                  </div>
+                  ${a.cover ? `<img class="thumb" src="${esc(a.cover)}" alt="" loading="lazy" />` : `<div class="thumb">${esc(a.category[0])}</div>`}
+                </a>`
+              )
+              .join("")
+          : `<p class="empty">Is section mein abhi kuch nahi hai.</p>`;
+      };
+      cats.addEventListener("click", (e) => {
+        const b = e.target.closest(".tab");
+        if (!b) return;
+        active = b.dataset.cat;
+        history.replaceState(null, "", active === "All" ? "articles.html" : `articles.html?cat=${active}`);
+        drawTabs();
+        draw();
+      });
+      search.addEventListener("input", draw);
+      drawTabs();
+      draw();
+    });
+  </script>
+</body>
+</html>

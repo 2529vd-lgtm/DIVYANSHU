@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Article</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <article class="reader" id="reader"><p class="empty">Loading…</p></article>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/vendor/marked.umd.js"></script>
+  <script src="js/vendor/purify.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/share.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const site = await renderChrome("articles");
+      const reader = document.getElementById("reader");
+      const id = param("id");
+      const { articles } = await loadJSON("content/articles.json", { articles: [] });
+      const a = articles.find((x) => x.id === id);
+      if (!a) return showError(reader, "Ye article nahi mila.");
+
+      let body = "";
+      try { body = await loadText(`content/articles/${a.id}.md`); }
+      catch (e) { return showError(reader, "Article load nahi ho paya. Thodi der baad try karein."); }
+
+      document.title = `${a.title} | ${site.name}`;
+      const more = articles
+        .filter((x) => x.id !== a.id && x.category === a.category)
+        .sort((x, y) => String(y.date).localeCompare(String(x.date)))
+        .slice(0, 3);
+
+      reader.innerHTML = `
+        <a class="kicker" href="articles.html?cat=${encodeURIComponent(a.category)}">${esc(a.category)}</a>
+        <h1>${esc(a.title)}</h1>
+        ${a.summary ? `<p class="standfirst">${esc(a.summary)}</p>` : ""}
+        <div class="byline">
+          <span class="meta"><b>${esc(a.author || site.author || "")}</b> · ${fmtDate(a.date, { day: "numeric", month: "long", year: "numeric" })} · ${readingTime(body)}</span>
+          <span class="tools" id="font-controls"></span>
+        </div>
+        ${a.cover ? `<img class="cover" src="${esc(a.cover)}" alt="" />` : ""}
+        <div class="prose" id="prose">${renderMarkdown(body)}</div>
+        ${shareHTML(a.title)}
+        <div class="follow no-print">
+          <h3>Follow ${esc(site.author || site.name)}</h3>
+          <p class="muted">Naye articles aur notes ki update ke liye judein.</p>
+          <div class="socials center">${socialLinksHTML(site) || `<span class="muted">Links jald aa rahe hain.</span>`}</div>
+        </div>
+        ${more.length ? `<section class="no-print"><div class="section-head"><h2>More ${esc(a.category)}</h2></div>
+          <div class="grid">${more.map((m) => `<a class="story" href="article.html?id=${encodeURIComponent(m.id)}">
+            <span class="kicker">${esc(m.category)}</span><h3>${esc(m.title)}</h3><div class="meta">${fmtDate(m.date)}</div></a>`).join("")}</div></section>` : ""}`;
+      setupFontControls(document.getElementById("prose"));
+      setupShare();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+- **Part III**, Articles **12–35**; justiciable
+- **Equality:** 14–18 · **Freedom:** 19–22 · **Exploitation:** 23–24 · **Religion:** 25–28 · **Cultural/Educational:** 29–30 · **Remedies:** 32
+- **Art. 17:** untouchability abolished
+- **Art. 21A:** education for ages 6–14 (86th Amendment, 2002)
+- **Right to Property:** removed by the 44th Amendment (1978); now Art. 300A
+- **Not suspendable in an emergency:** Art. 20 and 21
+- **Art. 32:** "heart and soul" (Ambedkar); 5 writs
+- **Cases:** Kesavananda (1973), Maneka Gandhi (1978), Puttaswamy (2017)

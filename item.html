@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <article class="reader" id="reader"><p class="empty">Loading…</p></article>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/vendor/marked.umd.js"></script>
+  <script src="js/vendor/purify.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/mindmap.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const site = await renderChrome("exams");
+      const reader = document.getElementById("reader");
+      const [{ exams }, { items }] = await Promise.all([
+        loadJSON("content/exams.json", { exams: [] }),
+        loadJSON("content/exam-items.json", { items: [] }),
+      ]);
+      const item = items.find((i) => i.id === param("id"));
+      if (!item) return showError(reader, "Ye notes nahi mile.");
+      if (item.type === "mock") return location.replace(`mock.html?id=${encodeURIComponent(item.id)}`);
+
+      const exam = exams.find((e) => e.id === item.exam) || { id: item.exam, name: item.exam, subjects: [] };
+      const subject = (exam.subjects || []).find((s) => s.id === item.subject);
+      const typeLabel = (ITEM_TYPES.find((t) => t.id === item.type) || {}).label || "";
+      let body = "";
+      try { body = await loadText(`content/exam-items/${item.id}.md`); }
+      catch (e) { return showError(reader, "Load nahi ho paya. Thodi der baad try karein."); }
+      document.title = `${item.title} | ${site.name}`;
+
+      const back = `exam.html?id=${encodeURIComponent(exam.id)}&view=material&subject=${encodeURIComponent(item.subject || "all")}&type=${item.type}`;
+      const isMap = item.type === "mindmap" && !/^\s*!\[/.test(body);
+      reader.innerHTML = `
+        <div class="breadcrumb"><a href="exams.html">Exam Corner</a> › <a href="exam.html?id=${encodeURIComponent(exam.id)}">${esc(exam.name)}</a>
+          ${subject ? ` › ${esc(subject.name)}` : ""} › <a href="${back}">${esc(typeLabel)}</a></div>
+        <h1>${esc(item.title)}</h1>
+        ${item.summary ? `<p class="standfirst">${esc(item.summary)}</p>` : ""}
+        <div class="byline">
+          <span class="meta"><span class="tag">${esc(typeLabel)}</span> ${fmtDate(item.date)}${isMap ? "" : " · " + readingTime(body)}</span>
+          <span class="tools"><span id="font-controls"></span><button class="icon-btn" onclick="window.print()" title="Print / Save as PDF">🖨️</button></span>
+        </div>
+        ${isMap ? `<div class="mindmap-wrap"><p class="help no-print">Zoom/drag kar sakte hain. Kisi point par click karke usse khol/band kar sakte hain.</p><svg class="mindmap" id="mindmap"></svg></div>` : ""}
+        <div class="prose ${isMap ? "hidden" : ""}" id="prose">${renderMarkdown(body)}</div>
+        ${shareHTML(item.title)}
+        <p class="no-print"><a href="${back}">← Back to ${esc(exam.name)} ${esc(typeLabel)}</a></p>`;
+      setupFontControls(document.getElementById("prose"));
+      setupShare();
+      if (isMap) renderMindmap(document.getElementById("mindmap"), body, document.getElementById("prose"));
+    });
+  </script>
+</body>
+</html>

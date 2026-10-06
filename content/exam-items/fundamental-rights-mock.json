@@ -1,0 +1,61 @@
+{
+  "duration": 5,
+  "negative": 0.33,
+  "questions": [
+    {
+      "q": "Which Article of the Constitution abolishes untouchability?",
+      "options": [
+        "Article 14",
+        "Article 15",
+        "Article 17",
+        "Article 18"
+      ],
+      "answer": 2,
+      "explanation": "Article 17 abolishes untouchability and forbids its practice in any form."
+    },
+    {
+      "q": "The Right to Property was removed from the list of Fundamental Rights by which amendment?",
+      "options": [
+        "42nd Amendment, 1976",
+        "44th Amendment, 1978",
+        "86th Amendment, 2002",
+        "73rd Amendment, 1992"
+      ],
+      "answer": 1,
+      "explanation": "The 44th Amendment (1978) removed Article 31. Property is now a legal right under Article 300A."
+    },
+    {
+      "q": "Which Articles cannot be suspended even during a national emergency?",
+      "options": [
+        "Articles 19 and 21",
+        "Articles 20 and 21",
+        "Articles 14 and 21",
+        "Articles 21 and 32"
+      ],
+      "answer": 1,
+      "explanation": "After the 44th Amendment, Articles 20 and 21 cannot be suspended during a national emergency."
+    },
+    {
+      "q": "In which case did the Supreme Court declare the Right to Privacy a Fundamental Right?",
+      "options": [
+        "Kesavananda Bharati (1973)",
+        "Maneka Gandhi (1978)",
+        "K.S. Puttaswamy (2017)",
+        "Golaknath (1967)"
+      ],
+      "answer": 2,
+      "explanation": "A nine-judge bench in K.S. Puttaswamy v. Union of India (2017) held privacy to be part of Article 21."
+    },
+    {
+      "q": "Article 21A (free and compulsory education for children aged 6–14) was added by:",
+      "options": [
+        "86th Amendment, 2002",
+        "44th Amendment, 1978",
+        "42nd Amendment, 1976",
+        "61st Amendment, 1989"
+      ],
+      "answer": 0,
+      "explanation": "The 86th Constitutional Amendment Act, 2002 inserted Article 21A."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Corner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container" style="padding-top:28px;padding-bottom:20px">
+    <h1 class="page-title">🎯 Exam Corner</h1>
+    <p class="page-sub">Kisi bhi exam par click karein: syllabus, subject-wise notes (long, short, mind map), PYQ aur mock test.</p>
+    <div class="grid" id="upcoming"></div>
+    <div id="past-wrap" class="hidden">
+      <div class="section-head" style="margin-top:36px"><h2>Past exams</h2></div>
+      <div class="grid" id="past"></div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    function examCard(e) {
+      return `<a class="card exam-card" href="exam.html?id=${encodeURIComponent(e.id)}">
+        <span class="tag">${fmtDate(e.date, { day: "numeric", month: "long", year: "numeric" })}${e.time ? " · " + esc(e.time) : ""}</span>
+        <h3 style="margin-top:8px">${esc(e.name)}</h3>
+        ${e.fullName ? `<p>${esc(e.fullName)}</p>` : ""}
+        <div class="countdown" data-countdown="${examTime(e).toISOString()}"></div>
+        <p>${(e.subjects || []).length} subjects</p>
+        <span class="btn small" style="margin-top:10px">Open →</span>
+      </a>`;
+    }
+    document.addEventListener("DOMContentLoaded", async () => {
+      await renderChrome("exams");
+      const { exams } = await loadJSON("content/exams.json", { exams: [] });
+      const now = Date.now();
+      const upcoming = exams.filter((e) => examTime(e) > now).sort((a, b) => examTime(a) - examTime(b));
+      const past = exams.filter((e) => examTime(e) <= now).sort((a, b) => examTime(b) - examTime(a));
+      document.getElementById("upcoming").innerHTML = upcoming.length
+        ? upcoming.map(examCard).join("")
+        : `<p class="empty">Abhi koi upcoming exam nahi hai.</p>`;
+      if (past.length) {
+        document.getElementById("past-wrap").classList.remove("hidden");
+        document.getElementById("past").innerHTML = past.map(examCard).join("");
+      }
+      startCountdowns();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "articles": [
+    {
+      "id": "study-routine",
+      "title": "My Daily Study Routine for Competitive Exams",
+      "category": "Blog",
+      "date": "2026-10-06",
+      "author": "Divyanshu",
+      "summary": "How I split my day between the static syllabus, current affairs and answer writing.",
+      "cover": ""
+    },
+    {
+      "id": "welcome",
+      "title": "Welcome to My Website",
+      "category": "Blog",
+      "date": "2026-10-05",
+      "author": "Divyanshu",
+      "summary": "Why I built this site and what you can expect to find here.",
+      "cover": ""
+    }
+  ]
+}

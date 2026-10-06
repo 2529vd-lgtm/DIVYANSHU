@@ -446,22 +446,6 @@ function settingsForm() {
     ${imageFieldHTML("s-photo", "Your photo (About section)", s.photo)}
     <div class="field"><label for="s-about">About me</label><textarea id="s-about" rows="5">${esc(s.about)}</textarea></div>
   </div>
-  <div class="panel">
-    <h2>👁 How many people read (visitor count)</h2>
-    <div class="field"><label for="s-goatcounter">GoatCounter code</label>
-      <input id="s-goatcounter" value="${esc((s.analytics || {}).goatcounter)}" placeholder="e.g. divyanshu" /></div>
-    <details class="help">
-      <summary><b>How to set it up (free, one time only)</b></summary>
-      <ol>
-        <li>Open <a href="https://www.goatcounter.com/signup" target="_blank" rel="noopener">goatcounter.com/signup</a>.</li>
-        <li>In <b>Code</b>, type a name (e.g. <code>divyanshu</code>). Your dashboard will be at <code>divyanshu.goatcounter.com</code>.</li>
-        <li>Enter your email and a password, create the account, and verify your email.</li>
-        <li>In the dashboard, go to <b>Settings</b>, tick <b>"Allow adding visitor counts on your website"</b> and save. This shows "👁 views" on every article.</li>
-        <li>Type the same code above and click Save below.</li>
-      </ol>
-      <p>Then log in at <code>CODE.goatcounter.com</code> to see how many times each article was read, which country and city readers came from, whether they used a phone or a computer, and where they came from (WhatsApp, Instagram, Google).</p>
-    </details>
-  </div>
   <button class="btn" id="s-save">💾 Save</button>`;
   setupImageFields($("view"));
   $("s-save").onclick = () =>
@@ -479,7 +463,6 @@ function settingsForm() {
         photo: $("s-photo").value.trim(),
         about: $("s-about").value.trim(),
         socials,
-        analytics: { ...(DB.site.analytics || {}), goatcounter: $("s-goatcounter").value.trim() },
       };
       await GH.put(PATHS.site, JSON.stringify(next, null, 2) + "\n", "Update site settings");
       DB.site = next;

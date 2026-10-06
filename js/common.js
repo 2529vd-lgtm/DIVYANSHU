@@ -128,7 +128,6 @@ async function renderChrome(active) {
     </footer>`;
   }
   if (site.name && !document.title.includes(site.name)) document.title += ` | ${site.name}`;
-  if (active !== "") startAnalytics(site); // the Admin page passes "" and isn't counted
   return site;
 }
 
@@ -155,47 +154,4 @@ function setupFontControls(container) {
 
 function showError(el, msg) {
   el.innerHTML = `<p class="empty">${esc(msg)}</p>`;
-}
-
-// ---------- Visitor counting (GoatCounter, free and cookie-free) ----------
-// Each article (and each novel chapter) is counted under a short, stable path
-// like /article/<id> or /article/<id>/ch-2.
-function goatcounterURL(site) {
-  const raw = String((site.analytics || {}).goatcounter || "").trim();
-  if (!raw) return "";
-  const m = raw.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.goatcounter\.com/i);
-  const code = m ? m[1] : raw.replace(/[^a-z0-9-]/gi, "");
-  return code ? `https://${code.toLowerCase()}.goatcounter.com` : "";
-}
-
-function viewPath() {
-  const page = location.pathname.split("/").pop() || "index.html";
-  const id = param("id");
-  if (page === "article.html" && id) return `/article/${id}${param("ch") ? `/ch-${param("ch")}` : ""}`;
-  return page === "index.html" ? "/" : `/${page.replace(/\.html$/, "")}`;
-}
-
-function startAnalytics(site) {
-  const base = goatcounterURL(site);
-  if (!base || window.goatcounter) return;
-  window.goatcounter = { no_onload: true };
-  const s = document.createElement("script");
-  s.async = true;
-  s.src = "https://gc.zgo.at/count.js";
-  s.dataset.goatcounter = `${base}/count`;
-  s.onload = () => window.goatcounter.count({ path: viewPath() });
-  document.head.appendChild(s);
-}
-
-// Fills <span id="views"></span> with " · 👁 123 views" for the current page.
-async function showViews(site) {
-  const el = document.getElementById("views");
-  const base = goatcounterURL(site);
-  if (!el || !base) return;
-  try {
-    const res = await fetch(`${base}/counter/${encodeURIComponent(viewPath())}.json`);
-    // 404 means "no visits yet" (it also happens while the public counter setting is off).
-    const count = res.ok ? (await res.json()).count : res.status === 404 ? "0" : null;
-    if (count != null) el.textContent = ` · 👁 ${count} views`;
-  } catch (e) {}
 }

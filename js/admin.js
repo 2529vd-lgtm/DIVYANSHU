@@ -102,8 +102,8 @@ function editorHTML(id, value, rows = 16) {
   return `<div class="editor" data-editor="${id}">
     <div class="editor-tools">
       ${TOOLS.map((t, i) => `<button type="button" class="icon-btn" data-tool="${i}" title="${esc(t[1])}">${esc(t[0])}</button>`).join("")}
-      <button type="button" class="icon-btn" data-upload="image" title="Upload a photo">🖼️ Photo</button>
-      <button type="button" class="icon-btn" data-upload="file" title="Upload a PDF or any file">📎 PDF/File</button>
+      <button type="button" class="icon-btn" data-upload="image" title="Upload one or more photos">🖼️ Photo</button>
+      <button type="button" class="icon-btn" data-upload="file" title="Upload one or more PDFs or other files">📎 PDF/File</button>
       <button type="button" class="icon-btn" data-preview title="See how it will look">👁️ Preview</button>
     </div>
     <textarea id="${id}" rows="${rows}" placeholder="Start writing here… (use the toolbar to add headings, bold, lists and photos)">${esc(value || "")}</textarea>
@@ -134,13 +134,20 @@ function setupEditors(root) {
         const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
         insertAtCursor(ta, TOOLS[b.dataset.tool][2](sel));
       } else if (b.dataset.upload) {
-        const file = await pickFile(b.dataset.upload === "image" ? "image/*" : "");
-        if (!file) return;
+        const files = await pickFiles(b.dataset.upload === "image" ? "image/*" : "");
+        if (!files.length) return;
         await busy(b, "Uploading…", async () => {
-          const path = await uploadFile(file);
-          const isImg = file.type.startsWith("image/");
-          insertAtCursor(ta, isImg ? `\n![${file.name}](${path})\n` : `\n[📄 ${file.name} (download/open)](${path})\n`);
-          status("✅ File uploaded. Don't forget to save.", "ok");
+          // One at a time: each upload is a commit, and parallel commits clash.
+          for (const [i, file] of files.entries()) {
+            if (files.length > 1) {
+              b.textContent = `Uploading ${i + 1}/${files.length}…`;
+              status(`⏳ Uploading ${i + 1} of ${files.length}: ${esc(file.name)}… please don't close this page.`);
+            }
+            const path = await uploadFile(file);
+            const isImg = file.type.startsWith("image/");
+            insertAtCursor(ta, isImg ? `\n![${file.name}](${path})\n` : `\n[📄 ${file.name} (download/open)](${path})\n`);
+          }
+          status(`✅ ${files.length > 1 ? files.length + " files" : "File"} uploaded. Don't forget to save.`, "ok");
         });
       } else if (b.dataset.preview !== undefined) {
         const showing = !pv.classList.contains("hidden");
@@ -150,6 +157,18 @@ function setupEditors(root) {
         if (!showing) pv.innerHTML = previewHTML(ta.value) || "<p class='muted'>Nothing written yet.</p>";
       }
     });
+  });
+}
+
+// Lets you choose several files at once.
+function pickFiles(accept) {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    if (accept) input.accept = accept;
+    input.onchange = () => resolve([...input.files]);
+    input.click();
   });
 }
 

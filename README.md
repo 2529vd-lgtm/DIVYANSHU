@@ -31,11 +31,13 @@ Every save becomes a commit in this repo. The live site updates 1–2 minutes la
 | `content/` | All content: `site.json`, `articles.json`, plus the article files |
 | `uploads/` | Photos and PDFs uploaded from the Admin page |
 | `js/config.js` | Repo/branch used by Admin, article categories, social platforms |
-| `js/vendor/` | Bundled libraries: marked and DOMPurify |
+| `js/vendor/` | Bundled libraries: marked and DOMPurify, plus mammoth and turndown for Word import (loaded only when used) |
 
 ## Writing tips
 
 Articles use Markdown. The Admin toolbar inserts the syntax for you.
+
+- **From Word:** click **📄 Word file** in the editor toolbar and choose the `.docx`. Headings, bold, lists, links, tables and pictures (including charts saved as pictures) come across, and the title fills itself in. Copy-pasting from Word also keeps tables and formatting. Word leaves pictures out of copied text, though, so use the button for documents with charts, or paste a chart on its own.
 
 ## View it locally
 
@@ -50,4 +52,4 @@ Then visit http://localhost:8000.
 ## Credits
 
 Social media icons are from [Font Awesome Free](https://fontawesome.com), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT) and [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0).
+Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT), [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0), [mammoth](https://github.com/mwilliamson/mammoth.js) (BSD-2-Clause), [turndown](https://github.com/mixmark-io/turndown) and [turndown-plugin-gfm](https://github.com/mixmark-io/turndown-plugin-gfm) (MIT).

@@ -104,6 +104,7 @@ function editorHTML(id, value, rows = 16) {
       ${TOOLS.map((t, i) => `<button type="button" class="icon-btn" data-tool="${i}" title="${esc(t[1])}">${esc(t[0])}</button>`).join("")}
       <button type="button" class="icon-btn" data-upload="image" title="Upload one or more photos">🖼️ Photo</button>
       <button type="button" class="icon-btn" data-upload="file" title="Upload one or more PDFs or other files">📎 PDF/File</button>
+      <button type="button" class="icon-btn" data-word title="Import a Word (.docx) file with its tables and pictures">📄 Word file</button>
       <button type="button" class="icon-btn" data-preview title="See how it will look">👁️ Preview</button>
     </div>
     <textarea id="${id}" rows="${rows}" placeholder="Start writing here… (use the toolbar to add headings, bold, lists and photos)">${esc(value || "")}</textarea>
@@ -123,10 +124,60 @@ function insertAtCursor(ta, text) {
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
+// Puts imported Word content into the editor and reports what came across.
+function insertImported(ed, ta, { markdown, title, images, tables }, liveCharts = 0) {
+  const titleInput = ed.closest(".panel")?.querySelector("#a-title");
+  if (title && titleInput && !titleInput.value.trim()) titleInput.value = title;
+  if (!ta.value.trim()) {
+    ta.value = markdown + "\n";
+    ta.focus();
+  } else insertAtCursor(ta, `\n\n${markdown}\n\n`);
+  const got = [`${tables} table${tables === 1 ? "" : "s"}`, `${images.uploaded} picture${images.uploaded === 1 ? "" : "s"}`].join(" and ");
+  const warn = [];
+  if (images.skipped)
+    warn.push(`${images.skipped} picture/chart couldn't be copied (Word doesn't include it when you copy text). Use the 📄 Word file button instead, or copy just the chart and paste it on its own.`);
+  if (liveCharts)
+    warn.push(`${liveCharts} chart${liveCharts === 1 ? " was" : "s were"} drawn inside Word and can't be imported. In Word, right-click the chart → Save as Picture, then add it with 🖼️ Photo.`);
+  status(`${warn.length ? "⚠️" : "✅"} Imported with ${got}. Check it with 👁️ Preview, then save.${warn.length ? "<br>" + warn.map(esc).join("<br>") : ""}`, warn.length ? "info" : "ok");
+}
+
+// Pasting from Word or a web page keeps headings, bold, lists, links and tables.
+// Pasting a single picture (a screenshot, or a chart copied on its own) uploads it.
+function setupSmartPaste(ed, ta) {
+  ta.addEventListener("paste", async (e) => {
+    const cd = e.clipboardData;
+    if (!cd) return;
+    const html = cd.getData("text/html");
+    const pictures = [...cd.files].filter((f) => f.type.startsWith("image/"));
+    const htmlHasText = html && new DOMParser().parseFromString(html, "text/html").body.textContent.trim();
+    const btn = ed.querySelector("[data-word]");
+    if (pictures.length && !htmlHasText) {
+      e.preventDefault();
+      await busy(btn, "Uploading…", async () => {
+        for (const [i, f] of pictures.entries()) {
+          const file = f.name && f.name !== "image.png" ? f : new File([f], `pasted-${Date.now().toString(36)}-${i + 1}.png`, { type: f.type });
+          insertAtCursor(ta, `\n![](${await uploadFile(file)})\n`);
+        }
+        status(`✅ Picture pasted and uploaded. Don't forget to save.`, "ok");
+      });
+    } else if (html && /<(table|h[1-6]|ul|ol|li|b|strong|i|em|a|img)[\s>]|mso-|class="?Mso/i.test(html)) {
+      e.preventDefault();
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      await busy(btn, "Pasting…", async () => {
+        const result = await pastedHTMLToMarkdown(html, (i, n) => status(`⏳ Uploading picture ${i} of ${n}…`));
+        ta.selectionStart = start;
+        ta.selectionEnd = end;
+        insertImported(ed, ta, result);
+      });
+    }
+  });
+}
+
 function setupEditors(root) {
   root.querySelectorAll("[data-editor]").forEach((ed) => {
     const ta = ed.querySelector("textarea");
     const pv = ed.querySelector(".preview");
+    setupSmartPaste(ed, ta);
     ed.querySelector(".editor-tools").addEventListener("click", async (e) => {
       const b = e.target.closest("button");
       if (!b) return;
@@ -148,6 +199,14 @@ function setupEditors(root) {
             insertAtCursor(ta, isImg ? `\n![${file.name}](${path})\n` : `\n[📄 ${file.name} (download/open)](${path})\n`);
           }
           status(`✅ ${files.length > 1 ? files.length + " files" : "File"} uploaded. Don't forget to save.`, "ok");
+        });
+      } else if (b.dataset.word !== undefined) {
+        const file = await pickFile(".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        if (!file) return;
+        if (!/\.docx$/i.test(file.name)) return status("⚠️ Please choose a .docx file. In Word, use File → Save As → Word Document (.docx).", "err");
+        await busy(b, "Importing…", async () => {
+          const result = await wordFileToMarkdown(file, (i, n) => status(`⏳ Uploading picture ${i} of ${n}… please don't close this page.`));
+          insertImported(ed, ta, result, await countLiveCharts(file));
         });
       } else if (b.dataset.preview !== undefined) {
         const showing = !pv.classList.contains("hidden");

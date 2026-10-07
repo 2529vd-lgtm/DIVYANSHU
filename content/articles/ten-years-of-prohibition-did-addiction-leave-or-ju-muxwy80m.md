@@ -1,4 +1,4 @@
-*Divyanshu · October 2026*
+
 
 ## A Question from the Streets of Patna
 

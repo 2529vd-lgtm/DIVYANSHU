@@ -241,7 +241,41 @@ function pickFile(accept) {
   });
 }
 
+// Big photos (phone or AI pictures are often 5–10 MB) upload slowly and load slowly for readers,
+// so resize them to at most 1600px and save as JPEG before uploading.
+async function shrinkImage(file) {
+  if (!/^image\/(jpeg|png|webp|bmp)$/.test(file.type) || file.size < 400 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; // transparent PNG areas become white, not black
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch (e) {
+    console.warn("Could not shrink image", e);
+    return file;
+  }
+}
+
+let uploadsRunning = 0;
+
 async function uploadFile(file) {
+  uploadsRunning++;
+  try {
+    return await uploadOne(await shrinkImage(file));
+  } finally {
+    uploadsRunning--;
+  }
+}
+
+async function uploadOne(file) {
   if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error(`File is larger than ${MAX_UPLOAD_MB} MB`);
   const base64 = await new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -266,20 +300,39 @@ function imageFieldHTML(id, label, value) {
       <input id="${id}" value="${esc(value || "")}" placeholder="Upload, or paste an image link" />
       <button type="button" class="btn small ghost" data-image-upload="${id}">Upload</button>
     </div>
+    <img id="${id}-preview" class="field-preview${value ? "" : " hidden"}" src="${esc(value || "")}" alt="" />
   </div>`;
 }
 
 function setupImageFields(root) {
-  root.querySelectorAll("[data-image-upload]").forEach((b) =>
+  root.querySelectorAll("[data-image-upload]").forEach((b) => {
+    const input = $(b.dataset.imageUpload);
+    const preview = $(`${input.id}-preview`);
+    const showPreview = (src) => {
+      preview.classList.toggle("hidden", !src);
+      if (src) preview.src = src;
+    };
+    input.addEventListener("change", () => showPreview(input.value.trim()));
     b.addEventListener("click", async () => {
       const file = await pickFile("image/*");
       if (!file) return;
-      await busy(b, "…", async () => {
-        $(b.dataset.imageUpload).value = await uploadFile(file);
+      const local = URL.createObjectURL(file);
+      showPreview(local);
+      await busy(b, "Uploading…", async () => {
+        status("⏳ Uploading photo… please wait for the ✅ message before you Publish.");
+        input.value = await uploadFile(file);
         status("✅ Photo uploaded. Now click Save/Publish.", "ok");
       });
-    })
-  );
+      if (!input.value) showPreview("");
+    });
+  });
+}
+
+// Saving while a photo is still uploading would save the article without it.
+function uploadsPending() {
+  if (!uploadsRunning) return false;
+  status("⏳ A photo is still uploading. Wait for the ✅ message, then click Save/Publish again.", "err");
+  return true;
 }
 
 // =====================================================================
@@ -366,6 +419,7 @@ async function articleForm(a) {
   syncNovel();
   $("a-cancel").onclick = articleList;
   $("a-save").onclick = () => {
+    if (uploadsPending()) return;
     const meta = {
       id: a?.id || makeId($("a-title").value, "article"),
       title: $("a-title").value.trim(),
@@ -475,6 +529,7 @@ async function chapterForm(novel, ch, nextN) {
   setupEditors($("view"));
   $("c-cancel").onclick = () => chapterList(novel);
   $("c-save").onclick = () => {
+    if (uploadsPending()) return;
     const text = $("c-body").value;
     if (!text.trim()) return status("⚠️ Please write the chapter.", "err");
     const entry = { n, title: $("c-title").value.trim(), date: $("c-date").value || today() };
@@ -527,7 +582,7 @@ function settingsForm() {
   <button class="btn" id="s-save">💾 Save</button>`;
   setupImageFields($("view"));
   $("s-save").onclick = () =>
-    busy($("s-save"), "Saving…", async () => {
+    !uploadsPending() && busy($("s-save"), "Saving…", async () => {
       const socials = {};
       SOCIALS.forEach((p) => {
         const v = $(`s-${p.id}`).value.trim();

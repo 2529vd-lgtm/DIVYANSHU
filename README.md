@@ -12,7 +12,7 @@ Live site: https://2529vd-lgtm.github.io/DIVYANSHU/
 
 Open **`/admin.html`** on the live site (or use the "Admin" link in the footer) and log in with a GitHub token. The login box has step-by-step instructions for creating the token. After that you can:
 
-- **📰 Articles:** write or edit a Blog, Story, Editorial or Report, with photos, PDFs, tables and a live preview.
+- **📰 Articles:** write or edit a Blog, Story, Editorial or Report, with photos, PDFs, tables and a live preview. Big photos are resized to 1600px JPEG before upload, so they upload fast and load fast.
 - **🔗 Social & Settings:** add your social media links (each shows its logo on the site), your photo and your About text.
 
 **Novels:** create a Story, tick **📖 This is a novel**, then use **Chapters → Add Chapter** to upload chapters one by one. Readers get two options: read chapter by chapter (with next/previous buttons) or read the full novel on one page. Chapters are saved in `content/articles/<id>/chapter-<n>.md`.

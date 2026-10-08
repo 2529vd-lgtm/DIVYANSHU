@@ -159,7 +159,7 @@ async function igPicture(a) {
   ctx.fillText(DB.site.name || "Divyanshu", pad, H - footerH + 34);
   ctx.font = "400 30px 'IG Sans'";
   ctx.fillStyle = "#5d6370";
-  const hint = "Full article: link in comments";
+  const hint = "Full article: link in bio";
   ctx.fillText(hint, W - pad - ctx.measureText(hint).width, H - footerH + 34);
 
   return c.toDataURL("image/jpeg", 0.9);
@@ -167,7 +167,7 @@ async function igPicture(a) {
 
 // ---------- Posting ----------
 function igCaption(a) {
-  return [a.title, (a.summary || "").trim(), "📖 Read the full article: link in the comments 👇 (also in bio)", IG_HASHTAGS[a.category] || IG_HASHTAGS.Blog]
+  return [a.title, (a.summary || "").trim(), "📖 Read the full article: link in bio 🔗 (and in the comments 👇)", IG_HASHTAGS[a.category] || IG_HASHTAGS.Blog]
     .filter(Boolean).join("\n\n").slice(0, 2200);
 }
 
@@ -206,20 +206,32 @@ async function igPost(a, onStep = () => {}) {
   onStep("Publishing…");
   const media = (await igCall("POST", `${acc.id}/media_publish`, { creation_id: container })).id;
 
-  let note = "";
-  try {
-    await igCall("POST", `${media}/comments`, { message: `📖 Read the full article here:\n${SITE_URL}article.html?id=${encodeURIComponent(a.id)}` });
-  } catch (e) {
-    note = " (The link comment failed: add it yourself.)";
-  }
+  const comment = await igComment(a, media);
+  const note = comment.ok ? "" : ` But the link comment failed: ${comment.error}`;
   let link = "";
   try { link = (await igCall("GET", media, { fields: "permalink" })).permalink || ""; } catch (e) {}
 
   await GH.updateJSON(IG_POSTED, { posted: {} }, (d) => {
     d.posted = d.posted || {};
-    d.posted[a.id] = { media_id: media, link, at: new Date().toISOString().slice(0, 16).replace("T", " ") };
+    d.posted[a.id] = { media_id: media, link, comment: comment.ok, at: new Date().toISOString().slice(0, 16).replace("T", " ") };
   }, `Posted to Instagram: ${a.title}`);
   return { link, note };
+}
+
+// Comments the article's link under the post. Never throws: the post is already live.
+async function igComment(a, media) {
+  try {
+    await igCall("POST", `${media}/comments`, { message: `📖 Read the full article here:\n${SITE_URL}article.html?id=${encodeURIComponent(a.id)}` });
+    return { ok: true };
+  } catch (e) {
+    const missingPermission = /permission|scope|#10\b|#200\b/i.test(e.message);
+    return {
+      ok: false,
+      error: missingPermission
+        ? `${esc(e.message)}. Your token is missing the <b>instagram_manage_comments</b> permission. In Graph API Explorer add it, generate and extend a new token, then Disconnect and connect again.`
+        : esc(e.message),
+    };
+  }
 }
 
 // ---------- Admin tab ----------
@@ -228,7 +240,7 @@ async function instagramTab() {
   if (!acc) {
     $("view").innerHTML = `<div class="panel">
       <h2>📸 Connect Instagram</h2>
-      <p class="help">Do this once. After that, every new article can go to Instagram with one tick: picture, caption and the article link in the comments.</p>
+      <p class="help">Do this once. After that, every new article can go to Instagram with one tick: picture, caption and the article link as a comment.</p>
       <div class="field"><label for="ig-token">Paste your Facebook Page token (starts with <code>EAA</code>)</label>
         <textarea id="ig-token" rows="3" placeholder="EAA..." autocomplete="off" spellcheck="false"></textarea></div>
       <button class="btn" id="ig-connect">Connect</button>
@@ -271,7 +283,7 @@ async function instagramTab() {
         const p = posted[a.id];
         return `<li><div><b>${esc(a.title)}</b><div class="meta">${esc(a.category)} · ${fmtDate(a.date)}${
           p ? ` · ✅ posted${p.link ? ` (<a href="${esc(p.link)}" target="_blank" rel="noopener">see post</a>)` : ""}` : ""}</div></div>
-          <span class="actions"><button class="btn small ${p ? "ghost" : ""}" data-ig="${esc(a.id)}">${p ? "Post again" : "📸 Post"}</button></span></li>`;
+          <span class="actions">${p && p.media_id && p.comment !== true ? `<button class="btn small" data-igc="${esc(a.id)}">💬 Add link comment</button>` : ""}<button class="btn small ${p ? "ghost" : ""}" data-ig="${esc(a.id)}">${p ? "Post again" : "📸 Post"}</button></span></li>`;
       }).join("") || `<li class="muted">No articles yet.</li>`}
     </ul>
   </div>`;
@@ -281,6 +293,19 @@ async function instagramTab() {
     status("");
     instagramTab();
   };
+  $("view").querySelectorAll("[data-igc]").forEach((b) =>
+    (b.onclick = () => {
+      const a = DB.articles.find((x) => x.id === b.dataset.igc);
+      busy(b, "Adding…", async () => {
+        status("⏳ Adding the link comment…");
+        const r = await igComment(a, posted[a.id].media_id);
+        if (!r.ok) return status(`❌ Comment failed: ${r.error}`, "err");
+        await GH.updateJSON(IG_POSTED, { posted: {} }, (d) => { if (d.posted[a.id]) d.posted[a.id].comment = true; }, `Instagram link comment: ${a.title}`);
+        await instagramTab();
+        status("✅ Link comment added.", "ok");
+      });
+    })
+  );
   $("view").querySelectorAll("[data-ig]").forEach((b) =>
     (b.onclick = () => {
       const a = DB.articles.find((x) => x.id === b.dataset.ig);
@@ -288,7 +313,7 @@ async function instagramTab() {
       busy(b, "Posting…", async () => {
         const r = await igPost(a, (m) => status(`⏳ ${m} please don't close this page.`));
         await instagramTab();
-        status(`✅ Posted on Instagram${r.link ? `: <a href="${esc(r.link)}" target="_blank" rel="noopener">see post</a>` : ""}.${r.note}`, "ok");
+        status(`✅ Posted on Instagram${r.link ? `: <a href="${esc(r.link)}" target="_blank" rel="noopener">see post</a>` : ""}.${r.note}`, r.note ? "err" : "ok");
       });
     })
   );

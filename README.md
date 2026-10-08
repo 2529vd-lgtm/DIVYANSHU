@@ -25,7 +25,7 @@ Every save becomes a commit in this repo. The live site updates 1–2 minutes la
 
 Admin → **📸 Instagram** (or open `admin.html#instagram`): paste a Facebook Page token once and the account is found automatically. The token is kept only in that browser, like the GitHub token.
 
-- When you publish a new article, keep **📸 Also post on Instagram** ticked. The Admin page draws a 1080×1350 picture (cover photo and title), uploads it to `uploads/instagram/`, posts it with the summary as caption, and comments the article's link.
+- When you publish a new article, keep **📸 Also post on Instagram** ticked. The Admin page draws a 1080×1350 picture (cover photo and title), uploads it to `uploads/instagram/`, posts it with the summary as caption, and comments the article's link. The picture and caption say "link in bio", so put your website link in your Instagram bio. If the comment fails, the tab shows why and has a **💬 Add link comment** button.
 - Older articles can be posted from the Instagram tab. Posted articles are listed in `content/instagram-posted.json`.
 - The token needs `instagram_basic`, `instagram_content_publishing` and `instagram_manage_comments`. A user token works too; the Page token behind it is used.
 - Upload the cover photo before you click Publish.

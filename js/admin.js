@@ -469,7 +469,7 @@ async function postNewArticleToInstagram(meta) {
   const saved = `✅ Article published: <a href="article.html?id=${encodeURIComponent(meta.id)}" target="_blank">view</a>.`;
   try {
     const r = await igPost(meta, (m) => status(`${saved} ⏳ Instagram: ${m} please don't close this page.`, "ok"));
-    status(`${saved} 📸 Posted on Instagram${r.link ? `: <a href="${esc(r.link)}" target="_blank" rel="noopener">see post</a>` : ""}.${r.note}`, "ok");
+    status(`${saved} 📸 Posted on Instagram${r.link ? `: <a href="${esc(r.link)}" target="_blank" rel="noopener">see post</a>` : ""}.${r.note}`, r.note ? "err" : "ok");
   } catch (e) {
     console.error(e);
     status(`${saved} ❌ Instagram post failed: ${esc(e.message)}. Try again from the 📸 Instagram tab.`, "err");

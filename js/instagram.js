@@ -255,7 +255,7 @@ async function instagramTab() {
   const posted = await igReadPosted();
   status(
     acc.expires
-      ? `⚠️ Connected, but this token stops working on ${new Date(acc.expires * 1000).toLocaleString()}. For a token that never expires, do the "Extend Access Token" step, then Disconnect and connect again.`
+      ? `⚠️ Connected, but this token stops working on ${new Date(acc.expires * 1000).toLocaleString()}. For one that never expires: open the <a href="https://developers.facebook.com/tools/debug/accesstoken/" target="_blank" rel="noopener">Access Token Debugger</a>, paste this token, click <b>Debug</b>, then <b>Extend Access Token</b> at the bottom. Copy the new token, click Disconnect here and connect with it.`
       : "",
     "err"
   );

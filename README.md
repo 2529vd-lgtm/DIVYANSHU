@@ -21,14 +21,14 @@ When you change a CSS or JS file, bump the `?v=` number in the HTML files so vis
 
 Every save becomes a commit in this repo. The live site updates 1–2 minutes later.
 
-## Instagram auto-post
+## Instagram posting
 
-When a new article is published, a GitHub Action (`.github/workflows/instagram.yml`) posts it to Instagram: a 1080×1350 picture with the cover photo and title, a caption with the summary, and the article's link as the first comment. It also checks every 3 hours, in case a run was missed.
+Admin → **📸 Instagram** (or open `admin.html#instagram`): paste a Facebook Page token once and the account is found automatically. The token is kept only in that browser, like the GitHub token.
 
-- It needs two repository secrets (Settings → Secrets and variables → Actions): `IG_USER_ID` and `IG_ACCESS_TOKEN` (a Facebook Page token with `instagram_basic`, `instagram_content_publishing` and `instagram_manage_comments`).
-- Posted articles are listed in `content/instagram-posted.json`, so nothing is posted twice. Articles that existed before the bot are listed there too.
-- To post an article by hand (or again): Actions → **Post to Instagram** → **Run workflow**, and type `latest`, a word from its title, or its id.
-- Upload the cover photo **before** you click Publish. The bot posts right after publishing.
+- When you publish a new article, keep **📸 Also post on Instagram** ticked. The Admin page draws a 1080×1350 picture (cover photo and title), uploads it to `uploads/instagram/`, posts it with the summary as caption, and comments the article's link.
+- Older articles can be posted from the Instagram tab. Posted articles are listed in `content/instagram-posted.json`.
+- The token needs `instagram_basic`, `instagram_content_publishing` and `instagram_manage_comments`. A user token works too; the Page token behind it is used.
+- Upload the cover photo before you click Publish.
 
 ## Where things live
 
@@ -40,7 +40,7 @@ When a new article is published, a GitHub Action (`.github/workflows/instagram.y
 | `content/` | All content: `site.json`, `articles.json`, plus the article files |
 | `uploads/` | Photos and PDFs uploaded from the Admin page |
 | `js/config.js` | Repo/branch used by Admin, article categories, social platforms |
-| `scripts/instagram/` | The Instagram bot and its fonts |
+| `fonts/` | Fonts used to draw Instagram pictures |
 | `js/vendor/` | Bundled libraries: marked and DOMPurify, plus mammoth and turndown for Word import (loaded only when used) |
 
 ## Writing tips

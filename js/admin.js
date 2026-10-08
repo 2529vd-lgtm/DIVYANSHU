@@ -9,7 +9,7 @@ const PATHS = {
 };
 const MAX_UPLOAD_MB = 25;
 const DB = { site: {}, articles: [] };
-let currentTab = "articles";
+let currentTab = ["articles", "settings", "instagram"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "articles";
 
 const $ = (id) => document.getElementById(id);
 const today = () => new Date(Date.now() + 5.5 * 3600000).toISOString().slice(0, 10);
@@ -80,8 +80,9 @@ function logout() {
 // ---------- Tabs ----------
 function showTab(tab) {
   currentTab = tab;
+  history.replaceState(null, "", tab === "articles" ? location.pathname : `#${tab}`);
   document.querySelectorAll("#admin-tabs .tab[data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
-  ({ articles: articleList, settings: settingsForm })[tab]();
+  ({ articles: articleList, settings: settingsForm, instagram: instagramTab })[tab]();
 }
 
 // ---------- Rich text editor (Markdown with toolbar + preview + uploads) ----------
@@ -401,6 +402,9 @@ async function articleForm(a) {
     </label>
     <div class="field"><label for="a-summary">Short summary (1–2 lines, shown on the home page)</label><textarea id="a-summary" rows="2" style="min-height:0">${esc(a?.summary)}</textarea></div>
     ${imageFieldHTML("a-cover", "Cover photo (optional)", a?.cover)}
+    ${a ? "" : IG.account
+      ? `<label style="font-weight:600;display:flex;gap:8px;align-items:center;margin-bottom:14px"><input type="checkbox" id="a-ig" style="width:auto" checked /> 📸 Also post on Instagram (@${esc(IG.account.username || "your account")})</label>`
+      : `<p class="help" style="margin-bottom:14px">📸 Want this on Instagram too? Connect it once in the <a href="#instagram" data-goto="instagram">Instagram tab</a>.</p>`}
     <div class="field"><label id="a-body-label">Article *</label>${editorHTML("a-body", body, 20)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" id="a-save">${a ? "Update" : "🚀 Publish"}</button>
@@ -418,6 +422,7 @@ async function articleForm(a) {
   $("a-novel").onchange = syncNovel;
   syncNovel();
   $("a-cancel").onclick = articleList;
+  $("view").querySelectorAll("[data-goto]").forEach((l) => (l.onclick = (e) => { e.preventDefault(); showTab(l.dataset.goto); }));
   $("a-save").onclick = () => {
     if (uploadsPending()) return;
     const meta = {
@@ -438,6 +443,7 @@ async function articleForm(a) {
     const text = $("a-body").value;
     if (!meta.title) return status("⚠️ Please write a title.", "err");
     if (!meta.novel && !text.trim()) return status("⚠️ Please write both the title and the article.", "err");
+    const toInstagram = !!$("a-ig")?.checked;
     busy($("a-save"), "Saving…", async () => {
       await GH.put(PATHS.article(meta.id), text, `${a ? "Update" : "Publish"} ${meta.category.toLowerCase()}: ${meta.title}`);
       const data = await GH.updateJSON(PATHS.articles, { articles: [] }, (d) => {
@@ -452,9 +458,22 @@ async function articleForm(a) {
       } else {
         articleList();
         status(PUBLISHED(`article.html?id=${encodeURIComponent(meta.id)}`), "ok");
+        if (toInstagram) await postNewArticleToInstagram(meta);
       }
     });
   };
+}
+
+// The article is already saved, so an Instagram problem is reported but never undoes it.
+async function postNewArticleToInstagram(meta) {
+  const saved = `✅ Article published: <a href="article.html?id=${encodeURIComponent(meta.id)}" target="_blank">view</a>.`;
+  try {
+    const r = await igPost(meta, (m) => status(`${saved} ⏳ Instagram: ${m} please don't close this page.`, "ok"));
+    status(`${saved} 📸 Posted on Instagram${r.link ? `: <a href="${esc(r.link)}" target="_blank" rel="noopener">see post</a>` : ""}.${r.note}`, "ok");
+  } catch (e) {
+    console.error(e);
+    status(`${saved} ❌ Instagram post failed: ${esc(e.message)}. Try again from the 📸 Instagram tab.`, "err");
+  }
 }
 
 // ---------- Novel chapters ----------

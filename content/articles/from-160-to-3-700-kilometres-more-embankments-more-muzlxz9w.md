@@ -1,5 +1,4 @@
 
-![FLOOD.png](uploads/2026/10/muzm7hpc-flood.png)
 
 **From 160 to 3,700 Kilometres:**
 

@@ -259,3 +259,37 @@ footer { border-top: 1px solid var(--border); padding: 24px 0; text-align: cente
   body { background: #fff; color: #000; }
 }
 .field-preview { display: block; margin-top: 8px; max-width: 220px; max-height: 140px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+
+/* ---------- Essay layout (designed long-form articles, e.g. Aukaat Ki Deewar) ---------- */
+.essay { --e-accent: #b8502f; --e-cream: #f6efe3; --e-ink: #1f1b17; font-family: "Noto Serif Devanagari", var(--serif); }
+[data-theme="dark"] .essay { --e-accent: #e58a63; --e-cream: #2a241e; --e-ink: #0f0d0b; }
+.essay .e-deck { font-family: var(--serif); color: var(--muted); margin-bottom: 0.4em; }
+.essay .e-deck b { color: var(--text); }
+.essay .e-tagline { color: var(--e-accent); font-style: italic; }
+.essay h2.e-lead { color: var(--e-accent); border: 0; margin-top: 1.2em; }
+.essay .e-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 1.2em 0; }
+.essay .e-card { background: var(--e-cream); border-radius: 8px; padding: 12px 16px; font-size: 0.95em; line-height: 1.65; }
+.essay .e-card b { display: block; color: var(--e-accent); margin-bottom: 2px; }
+.essay .e-pull { border-left: 4px solid var(--e-accent); padding: 4px 0 4px 18px; margin: 1.6em 0; font-weight: 700; font-size: 1.12em; line-height: 1.6; }
+.essay .e-kicker { font-family: var(--sans); font-size: 0.78rem; letter-spacing: 0.04em; color: var(--muted); margin: 2.4em 0 0; }
+.essay .e-kicker b { color: var(--e-accent); margin-right: 6px; }
+.essay h2.e-h { font-size: 1.75em; margin: 0.1em 0 0.7em; padding-bottom: 0.35em; border-bottom: 2px solid var(--text); font-family: inherit; }
+@media (min-width: 640px) { .essay .e-table { display: table; width: 100%; } }
+.essay .e-table th { background: var(--e-ink); color: #f6efe3; border-color: var(--e-ink); }
+.essay .e-table td:first-child { color: var(--e-accent); font-weight: 700; }
+.essay .e-table tr:nth-child(even) td { background: var(--e-cream); }
+.essay ul.e-dots { list-style: none; padding-left: 0; }
+.essay ul.e-dots li { position: relative; padding-left: 1.3em; }
+.essay ul.e-dots li::before { content: ""; position: absolute; left: 0.2em; top: 0.75em; width: 6px; height: 6px; border-radius: 50%; background: var(--e-accent); }
+.essay ul.e-check { list-style: none; padding-left: 0; }
+.essay ul.e-check li { position: relative; padding-left: 1.9em; }
+.essay ul.e-check li::before { content: ""; position: absolute; left: 0; top: 0.4em; width: 15px; height: 15px; border: 2px solid var(--e-accent); border-radius: 3px; }
+.essay .e-box { background: var(--e-cream); border: 1px solid var(--e-accent); border-radius: 10px; padding: 16px 20px; margin: 1.6em 0; }
+.essay .e-box h3 { color: var(--e-accent); margin-top: 0; font-family: inherit; }
+.essay .e-box p:last-child { margin-bottom: 0; }
+.essay .e-end { text-align: center; border-top: 2px solid var(--text); margin-top: 2.6em; padding-top: 1.4em; }
+.essay .e-end .big { font-weight: 700; font-size: 1.3em; line-height: 1.55; margin-bottom: 0.4em; }
+.essay .e-end .accent { color: var(--e-accent); }
+.essay .e-end .note { font-family: var(--sans); font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1em; margin-top: 1.4em; }
+.essay .e-end .gem { color: var(--e-accent); }
+@media (max-width: 560px) { .essay .e-cards { grid-template-columns: 1fr; } .essay h2.e-h { font-size: 1.45em; } }

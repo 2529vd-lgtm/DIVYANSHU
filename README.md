@@ -41,13 +41,14 @@ Admin → **📸 Instagram** (or open `admin.html#instagram`): paste a Facebook 
 | `uploads/` | Photos and PDFs uploaded from the Admin page |
 | `js/config.js` | Repo/branch used by Admin, article categories, social platforms |
 | `fonts/` | Fonts used to draw Instagram pictures |
-| `js/vendor/` | Bundled libraries: marked and DOMPurify, plus mammoth and turndown for Word import (loaded only when used) |
+| `js/vendor/` | Bundled libraries: marked and DOMPurify, plus mammoth and turndown for Word import and pdf.js for PDF import (loaded only when used) |
 
 ## Writing tips
 
 Articles use Markdown. The Admin toolbar inserts the syntax for you.
 
-- **From Word:** click **📄 Word file** in the editor toolbar and choose the `.docx`. Headings, bold, lists, links, tables and pictures (including charts saved as pictures) come across, and the title fills itself in. Copy-pasting from Word also keeps tables and formatting. Word leaves pictures out of copied text, though, so use the button for documents with charts, or paste a chart on its own.
+- **From Word or PDF:** click **📄 Word / PDF** in the editor toolbar and choose a `.docx` or `.pdf` file. Headings, bold, lists, links, tables and pictures (including charts saved as pictures) come across, and the title fills itself in. Copy-pasting from Word also keeps tables and formatting, but Word leaves pictures out of copied text, so use the button for documents with charts.
+- **PDF limits:** a PDF only stores positioned text, so check the result with 👁️ Preview. Charts drawn inside the PDF (not pictures), scanned pages (photos of text) and Hindi text can come out wrong. For Hindi, use the Word file. **📎 Attach file** is different: it attaches a PDF as a download link.
 
 ## View it locally
 
@@ -63,4 +64,4 @@ Then visit http://localhost:8000.
 
 Instagram picture fonts: [Merriweather](https://fonts.google.com/specimen/Merriweather) and [Inter](https://fonts.google.com/specimen/Inter) (SIL Open Font License).
 Social media icons are from [Font Awesome Free](https://fontawesome.com), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT), [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0), [mammoth](https://github.com/mwilliamson/mammoth.js) (BSD-2-Clause), [turndown](https://github.com/mixmark-io/turndown) and [turndown-plugin-gfm](https://github.com/mixmark-io/turndown-plugin-gfm) (MIT).
+Bundled libraries in `js/vendor/`: [marked](https://github.com/markedjs/marked) (MIT), [DOMPurify](https://github.com/cure53/DOMPurify) (Apache-2.0 / MPL-2.0), [mammoth](https://github.com/mwilliamson/mammoth.js) (BSD-2-Clause), [turndown](https://github.com/mixmark-io/turndown) and [turndown-plugin-gfm](https://github.com/mixmark-io/turndown-plugin-gfm) (MIT), [pdf.js](https://github.com/mozilla/pdf.js) (Apache-2.0).

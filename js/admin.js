@@ -104,8 +104,8 @@ function editorHTML(id, value, rows = 16) {
     <div class="editor-tools">
       ${TOOLS.map((t, i) => `<button type="button" class="icon-btn" data-tool="${i}" title="${esc(t[1])}">${esc(t[0])}</button>`).join("")}
       <button type="button" class="icon-btn" data-upload="image" title="Upload one or more photos">🖼️ Photo</button>
-      <button type="button" class="icon-btn" data-upload="file" title="Upload one or more PDFs or other files">📎 PDF/File</button>
-      <button type="button" class="icon-btn" data-word title="Import a Word (.docx) file with its tables and pictures">📄 Word file</button>
+      <button type="button" class="icon-btn" data-upload="file" title="Attach PDFs or other files as a download link (to show a PDF as text, use 📄 Word / PDF)">📎 Attach file</button>
+      <button type="button" class="icon-btn" data-word title="Import a Word (.docx) or PDF file as text, with its pictures">📄 Word / PDF</button>
       <button type="button" class="icon-btn" data-preview title="See how it will look">👁️ Preview</button>
     </div>
     <textarea id="${id}" rows="${rows}" placeholder="Start writing here… (use the toolbar to add headings, bold, lists and photos)">${esc(value || "")}</textarea>
@@ -126,17 +126,23 @@ function insertAtCursor(ta, text) {
 }
 
 // Puts imported Word content into the editor and reports what came across.
-function insertImported(ed, ta, { markdown, title, images, tables }, liveCharts = 0) {
+function insertImported(ed, ta, { markdown, title, images, tables, scanned, pdf, hindi }, liveCharts = 0) {
   const titleInput = ed.closest(".panel")?.querySelector("#a-title");
   if (title && titleInput && !titleInput.value.trim()) titleInput.value = title;
   if (!ta.value.trim()) {
     ta.value = markdown + "\n";
     ta.focus();
   } else insertAtCursor(ta, `\n\n${markdown}\n\n`);
+  if (pdf && !markdown.trim()) return status("⚠️ No text found in this PDF. It's probably a scanned page (a photo of text), which can't be read as text.", "err");
   const got = [`${tables} table${tables === 1 ? "" : "s"}`, `${images.uploaded} picture${images.uploaded === 1 ? "" : "s"}`].join(" and ");
   const warn = [];
   if (images.skipped)
     warn.push(`${images.skipped} picture/chart couldn't be copied (Word doesn't include it when you copy text). Use the 📄 Word file button instead, or copy just the chart and paste it on its own.`);
+  if (pdf) {
+    warn.push("From a PDF, check tables with 👁️ Preview (a complicated table may need fixing with ▦ Table). Charts drawn inside the PDF (not pictures) don't come across: take a screenshot of the chart and add it with 🖼️ Photo.");
+    if (hindi) warn.push("This PDF has Hindi text. PDFs often store Hindi in a way that comes out with broken letters, so check every line with 👁️ Preview. If it's broken, use the Word (.docx) file instead: it always keeps Hindi correctly.");
+    if (scanned) warn.push("Parts of this PDF look scanned (pictures of text), so their text can't be read and came in as pictures.");
+  }
   if (liveCharts)
     warn.push(`${liveCharts} chart${liveCharts === 1 ? " was" : "s were"} drawn inside Word and can't be imported. In Word, right-click the chart → Save as Picture, then add it with 🖼️ Photo.`);
   status(`${warn.length ? "⚠️" : "✅"} Imported with ${got}. Check it with 👁️ Preview, then save.${warn.length ? "<br>" + warn.map(esc).join("<br>") : ""}`, warn.length ? "info" : "ok");
@@ -202,9 +208,15 @@ function setupEditors(root) {
           status(`✅ ${files.length > 1 ? files.length + " files" : "File"} uploaded. Don't forget to save.`, "ok");
         });
       } else if (b.dataset.word !== undefined) {
-        const file = await pickFile(".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        const file = await pickFile(".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         if (!file) return;
-        if (!/\.docx$/i.test(file.name)) return status("⚠️ Please choose a .docx file. In Word, use File → Save As → Word Document (.docx).", "err");
+        if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
+          return busy(b, "Importing…", async () => {
+            const result = await pdfFileToMarkdown(file, (m) => status(`⏳ ${m} please don't close this page.`));
+            insertImported(ed, ta, { ...result, pdf: true });
+          });
+        }
+        if (!/\.docx$/i.test(file.name)) return status("⚠️ Please choose a .docx or .pdf file. For an old .doc file, open it in Word and use File → Save As → Word Document (.docx).", "err");
         await busy(b, "Importing…", async () => {
           const result = await wordFileToMarkdown(file, (i, n) => status(`⏳ Uploading picture ${i} of ${n}… please don't close this page.`));
           insertImported(ed, ta, result, await countLiveCharts(file));

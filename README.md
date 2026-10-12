@@ -30,6 +30,10 @@ Admin → **📸 Instagram** (or open `admin.html#instagram`): paste a Facebook 
 - The token needs `instagram_basic`, `instagram_content_publishing` and `instagram_manage_comments`. A user token works too; the Page token behind it is used.
 - Upload the cover photo before you click Publish.
 
+## LinkedIn sharing
+
+LinkedIn doesn't let a website post on its own without a server, so each article in Admin → Articles has an **in Share** button. It opens LinkedIn's post box with the title, summary, link and hashtags already written (also copied to the clipboard) and downloads the cover picture to attach. Then click Post.
+
 ## Where things live
 
 | Path | What it is |

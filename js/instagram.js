@@ -117,7 +117,9 @@ async function igPicture(a) {
   if (a.cover) {
     const photo = await igLoadImage(/^https?:/.test(a.cover) ? a.cover : GH.rawURL(a.cover));
     if (photo) {
-      coverH = 760;
+      // Wide covers (often with their own title on them) are shown whole: the photo band
+      // just gets shorter. Taller photos are cropped to fit the band.
+      coverH = Math.min(760, Math.round(W * photo.height / photo.width));
       const scale = Math.max(W / photo.width, coverH / photo.height);
       const sw = W / scale, sh = coverH / scale;
       ctx.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, W, coverH);

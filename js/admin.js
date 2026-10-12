@@ -365,6 +365,7 @@ function articleList() {
           ${a.novel ? `<button class="btn small" data-chapters="${esc(a.id)}">Chapters</button>` : ""}
           <a class="btn small ghost" href="article.html?id=${encodeURIComponent(a.id)}" target="_blank">View</a>
           <button class="btn small ghost" data-edit="${esc(a.id)}">Edit</button>
+          <button class="btn small ghost" data-li="${esc(a.id)}" title="Share on LinkedIn">in Share</button>
           <button class="btn small outline" data-del="${esc(a.id)}">Delete</button>
         </span></li>`).join("") || `<li class="muted">No articles yet.</li>`}
     </ul>
@@ -373,6 +374,7 @@ function articleList() {
   $("new-article").onclick = () => articleForm(null);
   $("view").querySelectorAll("[data-chapters]").forEach((b) => (b.onclick = () => chapterList(find(b.dataset.chapters))));
   $("view").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => articleForm(find(b.dataset.edit))));
+  $("view").querySelectorAll("[data-li]").forEach((b) => (b.onclick = () => shareOnLinkedIn(find(b.dataset.li))));
   $("view").querySelectorAll("[data-del]").forEach((b) =>
     (b.onclick = () => {
       const a = find(b.dataset.del);
@@ -485,6 +487,31 @@ async function postNewArticleToInstagram(meta) {
   } catch (e) {
     console.error(e);
     status(`${saved} ❌ Instagram post failed: ${esc(e.message)}. Try again from the 📸 Instagram tab.`, "err");
+  }
+}
+
+// LinkedIn doesn't let a website post by itself, so open LinkedIn's post box with the text
+// already written, copy the text too, and download the post picture to attach.
+async function shareOnLinkedIn(a) {
+  const url = `${SITE_URL}article.html?id=${encodeURIComponent(a.id)}`;
+  const text = [a.title, (a.summary || "").trim(), `📖 Read the full ${a.category.toLowerCase()}: ${url}`,
+    (IG_HASHTAGS[a.category] || IG_HASHTAGS.Blog)].filter(Boolean).join("\n\n");
+  // Open the window right away (inside the click), or the browser blocks it as a pop-up.
+  window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  // Not awaited: some browsers never settle this when the new tab has focus.
+  try { navigator.clipboard.writeText(text).catch(() => {}); } catch (e) {}
+  status("⏳ Making the post picture…");
+  try {
+    const link = document.createElement("a");
+    // A cover photo is used as it is (LinkedIn shows wide pictures well); without one, draw a card.
+    link.href = a.cover
+      ? URL.createObjectURL(await (await fetch(/^https?:/.test(a.cover) ? a.cover : GH.rawURL(a.cover))).blob())
+      : await igPicture(a);
+    link.download = `${a.id}-linkedin.${(a.cover || ".jpg").split(".").pop()}`;
+    link.click();
+    status("✅ LinkedIn is open with your post written (the text is also copied, paste it with Ctrl+V if the box is empty). The picture was downloaded: add it with the 🖼️ photo button in LinkedIn, then click Post.", "ok");
+  } catch (e) {
+    status("✅ LinkedIn is open with your post written (also copied). The picture couldn't be made; you can post without it.", "ok");
   }
 }
 

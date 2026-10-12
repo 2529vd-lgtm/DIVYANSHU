@@ -30,7 +30,12 @@ async function igCall(method, path, params, token) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.error) {
     const e = data.error || {};
-    throw new Error(`Instagram said: ${e.error_user_msg || e.message || res.status}`);
+    const msg = e.error_user_msg || e.message || res.status;
+    // The token no longer works for this app: expired, password changed, or app access removed.
+    const tokenDead = e.code === 190 || e.code === 102 || /cannot call api for app|session has expired|access token|has not authorized/i.test(String(msg));
+    throw new Error(`Instagram said: ${msg}${tokenDead
+      ? ". Your Instagram token has stopped working. Make a new one (Graph API Explorer → Generate Access Token → Extend Access Token), then click Disconnect in the 📸 Instagram tab and connect with the new token."
+      : ""}`);
   }
   return data;
 }

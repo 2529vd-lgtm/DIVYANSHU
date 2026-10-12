@@ -293,3 +293,11 @@ footer { border-top: 1px solid var(--border); padding: 24px 0; text-align: cente
 .essay .e-end .note { font-family: var(--sans); font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1em; margin-top: 1.4em; }
 .essay .e-end .gem { color: var(--e-accent); }
 @media (max-width: 560px) { .essay .e-cards { grid-template-columns: 1fr; } .essay h2.e-h { font-size: 1.45em; } }
+/* Editorial variant: red sans headings, boxed pull quotes (e.g. Mehndi Ki Katar) */
+.essay.ed { font-family: var(--serif); }
+.essay .e-lede { font-style: italic; font-weight: 700; font-size: 1.12em; line-height: 1.65; padding-bottom: 1em; border-bottom: 2px solid var(--text); }
+.essay h2.e-red { font-family: var(--sans); color: var(--e-accent); font-size: 1.35em; margin: 1.8em 0 0.5em; border: 0; }
+.essay .e-pull.boxed { background: var(--e-cream); font-family: var(--sans); padding: 12px 18px; border-radius: 0 6px 6px 0; }
+.essay .e-table.plain td:first-child { color: inherit; font-weight: 400; }
+.essay .e-table th, .essay .e-table td { overflow-wrap: normal; }
+.essay .e-table td:first-child { min-width: 7.5em; }
